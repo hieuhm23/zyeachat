@@ -81,6 +81,12 @@ module.exports = {
                 }
             ],
             [
+                "expo-camera",
+                {
+                    cameraPermission: "Cho phép $(PRODUCT_NAME) sử dụng camera để gọi video."
+                }
+            ],
+            [
                 "expo-image-picker",
                 {
                     photosPermission: "Cho phép $(PRODUCT_NAME) truy cập thư viện ảnh để gửi hình ảnh."
