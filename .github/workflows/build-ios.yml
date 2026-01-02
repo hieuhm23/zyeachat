@@ -1,0 +1,108 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - 'android/**'
+      - 'app.json'
+      - 'app.config.js'
+      - 'eas.json'
+      - 'package.json'
+      - 'yarn.lock'
+      - 'package-lock.json'
+      - '.github/workflows/build.yml'
+      - 'src/**'
+      - 'App.tsx'
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+      - name: 🏗 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🏗 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🏗 Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: � Prebuild iOS
+        run: npx expo prebuild --platform ios --clean
+
+      - name: �📦 Install CocoaPods
+        run: |
+          cd ios
+          pod install --repo-update
+
+      - name: 🔍 Find project info
+        id: project
+        run: |
+          cd ios
+          WORKSPACE=$(ls -d *.xcworkspace | head -1)
+          SCHEME=$(echo $WORKSPACE | sed 's/.xcworkspace//')
+          echo "workspace=$WORKSPACE" >> $GITHUB_OUTPUT
+          echo "scheme=$SCHEME" >> $GITHUB_OUTPUT
+          echo "Found: $WORKSPACE / $SCHEME"
+
+      - name: � Build iOS App
+        run: |
+          cd ios
+          xcodebuild \
+            -workspace "${{ steps.project.outputs.workspace }}" \
+            -scheme "${{ steps.project.outputs.scheme }}" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+      - name: � Debug - List build output
+        run: |
+          echo "=== Build directory ==="
+          find ios/build -name "*.app" -type d 2>/dev/null || echo "No .app found"
+          echo "=== Full tree ==="
+          ls -laR ios/build/Build/Products/Release-iphoneos/ 2>/dev/null || echo "No Release-iphoneos"
+
+      - name: 📦 Create IPA
+        run: |
+          APP_PATH=$(find ios/build -name "*.app" -type d | head -1)
+          
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: No .app file found!"
+            exit 1
+          fi
+          
+          echo "Found app at: $APP_PATH"
+          
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -r ZyeaChat.ipa Payload
+          
+          echo "IPA size:"
+          ls -la ZyeaChat.ipa
+
+      - name: 📤 Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZyeaChat-IPA
+          path: ZyeaChat.ipa
+          retention-days: 30
