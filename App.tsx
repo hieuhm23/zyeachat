@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StatusBar, View, Text, ActivityIndicator, AppState, Linking, StyleSheet, TouchableOpacity } from 'react-native';
+import { StatusBar, View, Text, ActivityIndicator, AppState, Linking, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -13,19 +13,15 @@ import { registerForPushNotificationsAsync, schedulePushNotification } from './s
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
-// Screens
+// Screens - Only Chat related, NO CallScreen
 import ChatListScreen from './src/screens/ChatListScreen';
 import ChatDetailScreen from './src/screens/ChatDetailScreen';
 import NewChatScreen from './src/screens/NewChatScreen';
 import CreateGroupScreen from './src/screens/CreateGroupScreen';
 import GroupInfoScreen from './src/screens/GroupInfoScreen';
-import CallScreen from './src/screens/CallScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
-
-// Components
-import IncomingCallModal from './src/components/IncomingCallModal';
 
 // Configure Notifications
 Notifications.setNotificationHandler({
@@ -69,7 +65,7 @@ function OpenFromMainAppScreen() {
                     onPress={() => {
                         // Try to open main app
                         Linking.openURL('zyea://').catch(() => {
-                            // Main app not installed
+                            Alert.alert('Thông báo', 'Vui lòng cài đặt ứng dụng myZyea');
                         });
                     }}
                 >
@@ -86,16 +82,6 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
     const [pushToken, setPushToken] = useState<string | null>(null);
     const [unreadChatCount, setUnreadChatCount] = useState(0);
     const [authChecked, setAuthChecked] = useState(false);
-
-    // Incoming call state
-    const [incomingCall, setIncomingCall] = useState<{
-        visible: boolean;
-        callerId: string;
-        callerName?: string;
-        callerAvatar?: string;
-        channelName?: string;
-        isVideo: boolean;
-    }>({ visible: false, callerId: '', isVideo: false });
 
     const { colors, isDark } = useTheme();
 
@@ -236,25 +222,31 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
 
                 socket.on('receiveMessage', socketListener);
 
-                // Handle incoming call
+                // Handle incoming call - redirect to main app for calls
                 socket.on('incomingCall', (data: any) => {
-                    setIncomingCall({
-                        visible: true,
-                        callerId: data.callerId,
-                        callerName: data.callerName,
-                        callerAvatar: data.callerAvatar,
-                        channelName: data.channelName,
-                        isVideo: data.isVideo,
-                    });
-                });
-
-                socket.on('callEnded', (data: any) => {
-                    setIncomingCall((prev) => {
-                        if (prev.visible && prev.callerId === data.callerId) {
-                            return { ...prev, visible: false };
-                        }
-                        return prev;
-                    });
+                    // Show alert and redirect to main app for call
+                    Alert.alert(
+                        '📞 Cuộc gọi đến',
+                        `${data.callerName || 'Người dùng'} đang gọi cho bạn`,
+                        [
+                            {
+                                text: 'Từ chối',
+                                style: 'cancel',
+                                onPress: () => {
+                                    socket.emit('callRejected', {
+                                        callerId: data.callerId,
+                                        receiverId: user?.id,
+                                    });
+                                }
+                            },
+                            {
+                                text: 'Mở myZyea',
+                                onPress: () => {
+                                    Linking.openURL(`zyea://call?callerId=${data.callerId}`).catch(() => { });
+                                }
+                            }
+                        ]
+                    );
                 });
             }
         } else {
@@ -266,7 +258,6 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
             if (socket && socketListener) {
                 socket.off('receiveMessage', socketListener);
                 socket.off('incomingCall');
-                socket.off('callEnded');
             }
         };
     }, [user?.id]);
@@ -339,41 +330,6 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
         Linking.openURL('zyea://').catch(() => { });
     };
 
-    const handleAcceptCall = () => {
-        const socket = getSocket();
-        if (socket) {
-            socket.emit('callAccepted', {
-                callerId: incomingCall.callerId,
-                receiverId: user?.id,
-                channelName: incomingCall.channelName,
-            });
-        }
-
-        setIncomingCall({ ...incomingCall, visible: false });
-
-        if (navigationRef.isReady()) {
-            navigationRef.navigate('Call', {
-                partnerId: incomingCall.callerId,
-                userName: incomingCall.callerName,
-                avatar: incomingCall.callerAvatar,
-                isVideo: incomingCall.isVideo,
-                isIncoming: true,
-                channelName: incomingCall.channelName,
-            });
-        }
-    };
-
-    const handleRejectCall = () => {
-        const socket = getSocket();
-        if (socket) {
-            socket.emit('callRejected', {
-                callerId: incomingCall.callerId,
-                receiverId: user?.id,
-            });
-        }
-        setIncomingCall({ ...incomingCall, visible: false });
-    };
-
     if (loading) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#667eea' }}>
@@ -402,26 +358,12 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
                 <Stack.Screen name="NewChat" component={NewChatScreen} />
                 <Stack.Screen name="CreateGroup" component={CreateGroupScreen} />
                 <Stack.Screen name="GroupInfo" component={GroupInfoScreen} />
-                <Stack.Screen
-                    name="Call"
-                    component={CallScreen}
-                    options={{ gestureEnabled: false }}
-                />
                 <Stack.Screen name="Settings">
                     {(props) => <SettingsScreen {...props} onLogout={handleLogout} />}
                 </Stack.Screen>
                 <Stack.Screen name="EditProfile" component={EditProfileScreen} />
                 <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
             </Stack.Navigator>
-
-            <IncomingCallModal
-                visible={incomingCall.visible}
-                callerName={incomingCall.callerName}
-                callerAvatar={incomingCall.callerAvatar}
-                isVideo={incomingCall.isVideo}
-                onAccept={handleAcceptCall}
-                onReject={handleRejectCall}
-            />
         </>
     );
 }
