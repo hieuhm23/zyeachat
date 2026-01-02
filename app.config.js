@@ -62,8 +62,7 @@ module.exports = {
                 "expo-build-properties",
                 {
                     ios: {
-                        deploymentTarget: "15.1",
-                        useFrameworks: "static"
+                        deploymentTarget: "15.1"
                     },
                     android: {
                         compileSdkVersion: 35,
