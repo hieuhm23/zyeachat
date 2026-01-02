@@ -61,13 +61,12 @@ module.exports = {
             [
                 "expo-build-properties",
                 {
-                    ios: {
-                        deploymentTarget: "15.1"
-                    },
                     android: {
                         compileSdkVersion: 35,
                         targetSdkVersion: 35,
                         buildToolsVersion: "35.0.0",
+                        enableProguardInReleaseBuilds: false,
+                        enableShrinkResourcesInReleaseBuilds: false,
                         usesCleartextTraffic: true,
                         minSdkVersion: 24,
                         extraMavenRepos: ["https://jitpack.io"]
