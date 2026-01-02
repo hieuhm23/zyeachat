@@ -92,21 +92,12 @@ module.exports = {
                 }
             ]
         ],
+        // OTA updates disabled for Zyea Chat - update via new IPA builds
         updates: {
-            url: "https://u.expo.dev/7244ecfc-4a54-4232-a0a3-e17d5039b55c",
-            checkAutomatically: "ON_LOAD",
-            fallbackToCacheTimeout: 0,
-            requestHeaders: {
-                "expo-channel-name": "chat-production"
-            }
-        },
-        runtimeVersion: {
-            policy: "appVersion"
+            enabled: false
         },
         extra: {
-            eas: {
-                projectId: "7244ecfc-4a54-4232-a0a3-e17d5039b55c"
-            }
+            // No EAS project - standalone app
         }
     }
 };

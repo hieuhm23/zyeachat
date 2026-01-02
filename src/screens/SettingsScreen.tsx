@@ -8,20 +8,19 @@ import {
     StatusBar,
     Alert,
     Platform,
-    Switch
+    Switch,
+    Image,
+    SafeAreaView
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { Ionicons, MaterialIcons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Updates from 'expo-updates';
 import { RootStackParamList } from '../navigation/types';
-import { COLORS } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
-import { getLatestChangelog } from '../utils/changelog';
-import UpdateModal from '../components/UpdateModal';
+import { getCurrentUser } from '../utils/api';
+import { getAvatarUri } from '../utils/media';
 
 interface SettingsScreenProps {
     onLogout: () => void;
@@ -29,36 +28,24 @@ interface SettingsScreenProps {
 
 export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-    const { theme, setTheme, colors, isDark } = useTheme();
-    const [showUpdateModal, setShowUpdateModal] = useState(false);
-    const [isDownloading, setIsDownloading] = useState(false);
+    const { colors, isDark } = useTheme();
+    const [user, setUser] = useState<any>(null);
+    const [isActiveStatus, setIsActiveStatus] = useState(true);
 
-    const handleCheckUpdate = async () => {
+    useFocusEffect(
+        React.useCallback(() => {
+            loadUser();
+        }, [])
+    );
+
+    const loadUser = async () => {
         try {
-            Alert.alert('Đang kiểm tra...', 'Đang kết nối tới máy chủ cập nhật...');
-            const update = await Updates.checkForUpdateAsync();
-            if (update.isAvailable) {
-                setShowUpdateModal(true);
-            } else {
-                Alert.alert('Đã cập nhật', 'Bạn đang sử dụng phiên bản mới nhất.');
+            const userData = await getCurrentUser();
+            if (userData) {
+                setUser(userData);
             }
-        } catch (error: any) {
-            Alert.alert('Lỗi', `Không thể kiểm tra cập nhật: ${error.message}`);
-        }
-    };
-
-    const handleDownloadUpdate = async () => {
-        try {
-            setIsDownloading(true);
-            await Updates.fetchUpdateAsync();
-            Alert.alert('Hoàn tất!', 'Ứng dụng sẽ khởi động lại ngay.', [
-                { text: 'OK', onPress: () => Updates.reloadAsync() }
-            ]);
-        } catch (error: any) {
-            Alert.alert('Lỗi', `Không thể tải bản cập nhật: ${error.message}`);
-        } finally {
-            setIsDownloading(false);
-            setShowUpdateModal(false);
+        } catch (error) {
+            console.log('Error loading user:', error);
         }
     };
 
@@ -73,323 +60,309 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
         );
     };
 
+    const renderMenuItem = (icon: any, title: string, subtitle?: string, onPress?: () => void, rightElement?: React.ReactNode, isDestructive = false) => (
+        <TouchableOpacity
+            style={styles.menuItem}
+            onPress={onPress}
+            activeOpacity={0.7}
+        >
+            <View style={styles.menuLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: isDestructive ? '#FEE2E2' : (isDark ? '#374151' : '#F3F4F6') }]}>
+                    {icon}
+                </View>
+                <Text style={[styles.menuTitle, { color: isDestructive ? '#EF4444' : colors.text }]}>{title}</Text>
+            </View>
+            <View style={styles.menuRight}>
+                {subtitle && <Text style={[styles.menuSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text>}
+                {rightElement || <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />}
+            </View>
+        </TouchableOpacity>
+    );
+
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
 
-            {/* Header */}
+            {/* Header Gradient Background */}
             <LinearGradient
-                colors={colors.headerGradient}
-                start={{ x: 0, y: 0.5 }}
-                end={{ x: 1, y: 0.5 }}
-                style={styles.header}
-            >
-                <SafeAreaView>
-                    <View style={styles.headerContent}>
-                        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                            <Ionicons name="chevron-back" size={28} color={isDark ? '#FFF' : '#000'} />
-                        </TouchableOpacity>
-                        <Text style={[styles.headerTitle, { color: isDark ? '#FFF' : '#000' }]}>Cài đặt & Riêng tư</Text>
-                    </View>
-                </SafeAreaView>
-            </LinearGradient>
-
-            <ScrollView style={[styles.content, { backgroundColor: colors.background }]} contentContainerStyle={{ paddingBottom: 40 }}>
-
-                {/* Edit Profile */}
-                <TouchableOpacity
-                    style={[styles.card, { backgroundColor: colors.card }]}
-                    onPress={() => navigation.navigate('EditProfile')}
-                >
-                    <View style={styles.cardRow}>
-                        <View style={styles.iconLabel}>
-                            <View style={{
-                                width: 32, height: 32, borderRadius: 8,
-                                backgroundColor: isDark ? '#2D2D2D' : '#E0E7FF',
-                                alignItems: 'center', justifyContent: 'center', marginRight: 12
-                            }}>
-                                <Ionicons name="person-circle-outline" size={20} color="#6366F1" />
-                            </View>
-                            <View>
-                                <Text style={[styles.cardTitle, { color: colors.text }]}>Chỉnh sửa hồ sơ</Text>
-                                <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>Ảnh đại diện, tên, tiểu sử...</Text>
-                            </View>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                    </View>
-                </TouchableOpacity>
-
-                {/* Theme Selection */}
-                <View style={[styles.sectionTitleContainer, { paddingHorizontal: 4, marginTop: 20 }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Giao diện</Text>
-                </View>
-
-                <View style={[styles.card, { backgroundColor: colors.card, shadowColor: isDark ? '#000' : '#000' }]}>
-                    <TouchableOpacity
-                        style={[styles.cardRow, { borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 12 }]}
-                        onPress={() => setTheme('light')}
-                    >
-                        <View style={styles.iconLabel}>
-                            <Ionicons name="sunny-outline" size={22} color={colors.text} style={styles.cardIcon} />
-                            <Text style={[styles.cardTitle, { color: colors.text }]}>Chế độ Sáng</Text>
-                        </View>
-                        {theme === 'light' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.cardRow, { borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: 12 }]}
-                        onPress={() => setTheme('dark')}
-                    >
-                        <View style={styles.iconLabel}>
-                            <Ionicons name="moon-outline" size={22} color={colors.text} style={styles.cardIcon} />
-                            <Text style={[styles.cardTitle, { color: colors.text }]}>Chế độ Tối</Text>
-                        </View>
-                        {theme === 'dark' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.cardRow, { paddingTop: 12 }]}
-                        onPress={() => setTheme('system')}
-                    >
-                        <View style={styles.iconLabel}>
-                            <Ionicons name="phone-portrait-outline" size={22} color={colors.text} style={styles.cardIcon} />
-                            <Text style={[styles.cardTitle, { color: colors.text }]}>Theo hệ thống</Text>
-                        </View>
-                        {theme === 'system' && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
-                    </TouchableOpacity>
-                </View>
-
-                {/* Privacy & Security */}
-                <View style={[styles.sectionTitleContainer, { paddingHorizontal: 4, marginTop: 20 }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Bảo mật & Riêng tư</Text>
-                </View>
-
-                <TouchableOpacity
-                    style={[styles.card, { backgroundColor: colors.card }]}
-                    onPress={() => navigation.navigate('PrivacySettings')}
-                >
-                    <View style={styles.cardRow}>
-                        <View style={styles.iconLabel}>
-                            <View style={{
-                                width: 32, height: 32, borderRadius: 8,
-                                backgroundColor: isDark ? '#2D2D2D' : '#E0F2FE',
-                                alignItems: 'center', justifyContent: 'center', marginRight: 12
-                            }}>
-                                <Ionicons name="shield-checkmark" size={20} color="#0EA5E9" />
-                            </View>
-                            <View>
-                                <Text style={[styles.cardTitle, { color: colors.text }]}>Quyền riêng tư & Bảo mật</Text>
-                                <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>Sinh trắc học, khóa ứng dụng, chặn...</Text>
-                            </View>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                    </View>
-                </TouchableOpacity>
-
-                {/* Change Password */}
-                <TouchableOpacity
-                    style={[styles.card, { marginTop: 12, backgroundColor: colors.card }]}
-                    onPress={() => navigation.navigate('ChangePassword')}
-                >
-                    <View style={styles.cardRow}>
-                        <View style={styles.iconLabel}>
-                            <View style={{
-                                width: 32, height: 32, borderRadius: 8,
-                                backgroundColor: isDark ? '#2D2D2D' : '#FEF3C7',
-                                alignItems: 'center', justifyContent: 'center', marginRight: 12
-                            }}>
-                                <Ionicons name="key-outline" size={20} color="#F59E0B" />
-                            </View>
-                            <View>
-                                <Text style={[styles.cardTitle, { color: colors.text }]}>Đổi mật khẩu</Text>
-                                <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>Thay đổi mật khẩu đăng nhập</Text>
-                            </View>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                    </View>
-                </TouchableOpacity>
-
-                {/* Feedback */}
-                <TouchableOpacity
-                    style={[styles.card, { marginTop: 12, backgroundColor: colors.card }]}
-                    onPress={() => navigation.navigate('Feedback')}
-                >
-                    <View style={styles.cardRow}>
-                        <View style={styles.iconLabel}>
-                            <Ionicons name="chatbox-ellipses-outline" size={22} color={colors.text} style={styles.cardIcon} />
-                            <Text style={[styles.cardTitle, { color: colors.text }]}>Gửi phản hồi</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                    </View>
-                </TouchableOpacity>
-
-                <Text style={[styles.supportText, { color: colors.textSecondary }]}>
-                    Gửi phản hồi tới Quản trị hệ thống để <Text style={{ fontWeight: 'bold' }}>báo cáo sự cố</Text> hoặc góp ý cải tiến tính năng. Việc hỗ trợ xử lý sự cố sẽ được hiệu quả hơn. <Text style={{ fontWeight: 'bold' }}>Góp ý</Text> sẽ được ghi nhận để giúp Bạn có một phần mềm ngày càng tốt và hữu dụng hơn.
-                </Text>
-
-                {/* About Section */}
-                <View style={[styles.aboutContainer, { backgroundColor: colors.card }]}>
-                    <Text style={[styles.aboutTitle, { color: colors.text }]}>Giới thiệu về myZyea Next</Text>
-
-                    <Text style={[styles.aboutText, { color: colors.text }]}>
-                        <Text style={{ fontWeight: 'bold' }}>myZyea Next</Text> là một <Text style={{ fontWeight: 'bold' }}>SuperApp</Text> được thiết kế đặc biệt dành cho các doanh nghiệp vừa và lớn, giúp doanh nghiệp nâng cao trải nghiệm nhân viên với 5 giá trị cốt lõi: <Text style={{ fontStyle: 'italic' }}>Communication, Performance Management, Rewards, Personal Development</Text> và <Text style={{ fontStyle: 'italic' }}>Belonging</Text>, qua đó nâng cao năng suất làm việc, chất lượng công việc, xây dựng văn hóa doanh nghiệp và tăng cường sự gắn kết giữa các thành viên công ty.
-                    </Text>
-
-                    <Text style={[styles.aboutText, { marginTop: 12, color: colors.text }]}>
-                        Hiện tại, phiên bản SuperApp <Text style={{ fontWeight: 'bold' }}>myZyea Next</Text> mà các Bạn đang sử dụng là phiên bản dành riêng cho Tập đoàn Zyea, gồm tính năng chính: <Text style={{ fontStyle: 'italic' }}>Tin tức, Việc của tôi, Payslip, Reward, Discipline, My Gold, Zyea Care, To-do Notes, QR Code, Learning, Survey...</Text> Các tính năng của <Text style={{ fontWeight: 'bold' }}>myZyea Next</Text> sẽ được tiếp tục cập nhật trong thời gian tới.
-                    </Text>
-
-                    <Text style={[styles.aboutText, { marginTop: 12, color: colors.text }]}>
-                        Để SuperApp <Text style={{ fontWeight: 'bold' }}>myZyea Next</Text> sớm hoàn thiện, đội ngũ phát triển <Text style={{ fontWeight: 'bold' }}>myZyea Next</Text> mong Bạn sử dụng, trải nghiệm, góp ý, xây dựng để cùng đưa SuperApp <Text style={{ fontWeight: 'bold' }}>myZyea Next</Text> tiến nhanh, hoàn thành sứ mệnh là 1 Sản phẩm công nghệ lõi, 1 Massive Product của Zyea.
-                    </Text>
-                </View>
-
-                {/* Logout Button */}
-                <TouchableOpacity style={[styles.logoutButton, { backgroundColor: colors.card }]} onPress={handleLogout}>
-                    <Ionicons name="log-out-outline" size={24} color="#EF4444" />
-                    <Text style={styles.logoutText}>Đăng xuất</Text>
-                </TouchableOpacity>
-
-            </ScrollView>
-
-            {/* Update Modal */}
-            <UpdateModal
-                visible={showUpdateModal}
-                onUpdate={handleDownloadUpdate}
-                onClose={() => setShowUpdateModal(false)}
-                isDownloading={isDownloading}
+                colors={['#ffebd9', '#e0f8ff']} // Light pastel gradient like header
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.headerBackground}
             />
+
+            <SafeAreaView style={{ flex: 1 }}>
+                {/* Header Bar */}
+                <View style={styles.headerBar}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Ionicons name="chevron-back" size={28} color="#000" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.scanButton}>
+                        <Ionicons name="scan-outline" size={24} color="#000" />
+                    </TouchableOpacity>
+                </View>
+
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={{ paddingBottom: 40 }}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* User Profile Section */}
+                    <View style={styles.profileSection}>
+                        <View style={styles.avatarContainer}>
+                            <Image
+                                source={{ uri: getAvatarUri(user?.avatar, user?.name || 'User') }}
+                                style={styles.avatar}
+                            />
+                            <TouchableOpacity
+                                style={styles.editAvatarBtn}
+                                onPress={() => navigation.navigate('EditProfile')}
+                            >
+                                <Ionicons name="camera" size={12} color="#fff" />
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={[styles.userName, { color: '#000' }]}>{user?.name || 'Người dùng'}</Text>
+                        <Text style={[styles.department, { color: '#6B7280' }]}>{user?.department || 'FRT - FLC - HN'}</Text>
+                    </View>
+
+                    {/* Menu Group 1 */}
+                    <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff' }]}>
+                        {renderMenuItem(
+                            <Ionicons name="person-circle" size={20} color="#000" />,
+                            "Hồ sơ thông tin",
+                            undefined,
+                            () => navigation.navigate('EditProfile')
+                        )}
+                        <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
+                        {renderMenuItem(
+                            <Ionicons name="happy-outline" size={20} color="#000" />,
+                            "Dòng trạng thái"
+                        )}
+                        <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
+                        {renderMenuItem(
+                            <Ionicons name="ellipse" size={20} color="#000" />,
+                            "Trạng thái hoạt động",
+                            undefined,
+                            undefined,
+                            <View style={styles.statusToggle}>
+                                <View style={[styles.statusDot, { backgroundColor: isActiveStatus ? '#22C55E' : '#9CA3AF' }]} />
+                                <Text style={[styles.statusText, { color: colors.textSecondary }]}>{isActiveStatus ? 'Đang bật' : 'Tắt'}</Text>
+                                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Menu Group 2 */}
+                    <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff', marginTop: 12 }]}>
+                        {renderMenuItem(
+                            <Ionicons name="folder-outline" size={20} color="#000" />,
+                            "Thư mục tin nhắn"
+                        )}
+                        <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
+                        {renderMenuItem(
+                            <Ionicons name="bookmark" size={20} color="#000" />,
+                            "Tin nhắn lưu"
+                        )}
+                    </View>
+
+                    {/* Menu Group 3 */}
+                    <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff', marginTop: 12 }]}>
+                        {renderMenuItem(
+                            <MaterialIcons name="devices" size={20} color="#000" />,
+                            "Quản lý thiết bị"
+                        )}
+                        <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
+                        {renderMenuItem(
+                            <Ionicons name="shield-checkmark" size={20} color="#000" />,
+                            "Bảo mật & An toàn",
+                            undefined,
+                            () => navigation.navigate('ChangePassword')
+                        )}
+                        <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
+                        {renderMenuItem(
+                            <Ionicons name="pie-chart-outline" size={20} color="#000" />,
+                            "Quản lý tài nguyên"
+                        )}
+                        <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
+                        {renderMenuItem(
+                            <Ionicons name="notifications" size={20} color="#000" />,
+                            "Thông báo & âm thanh"
+                        )}
+                        <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
+                        {renderMenuItem(
+                            <Ionicons name="color-palette-outline" size={20} color="#000" />,
+                            "Giao diện",
+                            "Hệ thống"
+                        )}
+                        <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
+                        {renderMenuItem(
+                            <MaterialCommunityIcons name="format-size" size={20} color="#000" />,
+                            "Kích thước chữ"
+                        )}
+                        <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
+                        {renderMenuItem(
+                            <Ionicons name="globe-outline" size={20} color="#000" />,
+                            "Ngôn ngữ",
+                            "Tiếng Việt"
+                        )}
+                    </View>
+
+                    {/* Menu Group 4 */}
+                    <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff', marginTop: 12 }]}>
+                        {renderMenuItem(
+                            <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />,
+                            "Góp ý"
+                        )}
+                        <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
+                        {renderMenuItem(
+                            <Ionicons name="help-circle-outline" size={20} color="#000" />,
+                            "Hướng dẫn sử dụng"
+                        )}
+                        <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
+                        {renderMenuItem(
+                            <Ionicons name="log-out-outline" size={20} color="#000" />,
+                            "Đăng xuất",
+                            undefined,
+                            handleLogout
+                        )}
+                    </View>
+
+                    <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+                        FPTChat v1.0.20 © 2026 FPT Corporation.
+                    </Text>
+                </ScrollView>
+            </SafeAreaView>
         </View>
     );
 }
 
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        // backgroundColor handled inline with colors.background
     },
-    header: {
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-        backgroundColor: 'transparent',
+    headerBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 200, // Background gradient height
     },
-    headerContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    backButton: {
-        paddingRight: 12,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#000',
-    },
-    content: {
-        flex: 1,
-        padding: 16,
-    },
-    card: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        // Shadow for iOS
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        // Shadow for Android
-        elevation: 2,
-    },
-    cardRow: {
+    headerBar: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        zIndex: 10,
     },
-    iconLabel: {
-        flexDirection: 'row',
+    backButton: {
+        padding: 8,
+    },
+    scanButton: {
+        padding: 8,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    profileSection: {
         alignItems: 'center',
+        marginBottom: 24,
+        marginTop: 10,
     },
-    cardIcon: {
-        marginRight: 10,
-    },
-    cardTitle: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#333',
-    },
-    cardSubtitle: {
-        fontSize: 12,
-        color: '#999',
-        marginTop: 2,
-    },
-    rightContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    valueText: {
-        fontSize: 15,
-        color: '#999',
-        marginRight: 4,
-    },
-    supportText: {
-        fontSize: 13,
-        color: '#666',
-        marginTop: 12,
-        marginBottom: 20,
-        lineHeight: 18,
-    },
-    aboutContainer: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    aboutTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
+    avatarContainer: {
+        position: 'relative',
         marginBottom: 12,
-        color: '#333',
     },
-    aboutText: {
-        fontSize: 14,
-        color: '#444',
-        lineHeight: 22,
-        textAlign: 'justify',
+    avatar: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        borderWidth: 3,
+        borderColor: '#fff',
     },
-    logoutButton: {
+    editAvatarBtn: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: '#4B5563',
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: '#fff',
+    },
+    userName: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    department: {
+        fontSize: 13,
+    },
+    menuGroup: {
+        marginHorizontal: 16,
+        borderRadius: 16,
+        overflow: 'hidden',
+        paddingVertical: 4,
+    },
+    menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
+        justifyContent: 'space-between',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
     },
-    logoutText: {
-        color: '#EF4444',
-        fontWeight: 'bold',
-        fontSize: 16,
-        marginLeft: 8,
+    menuLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
     },
-    sectionTitleContainer: {
-        marginBottom: 8,
-        marginTop: 4,
+    iconContainer: {
+        width: 0, // Hidden or minimal as per design (design shows direct icons)
+        height: 0,
+        // The design shows icons directly without container background, 
+        // effectively 0 width if we want to mimic strictly or remove it.
+        // Actually the design shows simple black icons.
+        // Let's hide the container logic from previous implementation
+        display: 'none',
     },
-    sectionTitle: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        textTransform: 'uppercase',
+    menuTitle: {
+        fontSize: 15,
+        fontWeight: '400',
     },
+    menuRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    menuSubtitle: {
+        fontSize: 13,
+    },
+    divider: {
+        height: StyleSheet.hairlineWidth,
+        marginLeft: 16, // Indent divider
+    },
+    statusToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    statusDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+    },
+    statusText: {
+        fontSize: 13,
+    },
+    footerText: {
+        textAlign: 'center',
+        fontSize: 11,
+        marginTop: 24,
+        marginBottom: 10,
+        opacity: 0.6,
+    }
 });

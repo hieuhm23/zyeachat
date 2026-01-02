@@ -604,7 +604,10 @@ export default function ChatListScreen() {
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <View style={styles.headerLeft}>
+                    <TouchableOpacity
+                        style={styles.headerLeft}
+                        onPress={() => navigation.navigate('Settings' as any)}
+                    >
                         {/* Avatar using user data */}
                         <View style={{ marginRight: 10 }}>
                             <Image
@@ -614,7 +617,7 @@ export default function ChatListScreen() {
                             <View style={[styles.onlineDot, { right: 0, bottom: 0, borderColor: '#ffebd9' }]} />
                         </View>
                         <Text style={[styles.headerTitle, { color: colors.text }]}>Chats</Text>
-                    </View>
+                    </TouchableOpacity>
                     <View style={styles.headerRight}>
                         <TouchableOpacity
                             style={styles.headerIcon}
