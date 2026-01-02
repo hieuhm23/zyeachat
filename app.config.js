@@ -7,7 +7,7 @@ module.exports = {
         orientation: "portrait",
         icon: "./assets/icon.png",
         userInterfaceStyle: "automatic",
-        newArchEnabled: true,
+        newArchEnabled: false,
         splash: {
             image: "./assets/splash.png",
             resizeMode: "contain",
@@ -61,6 +61,10 @@ module.exports = {
             [
                 "expo-build-properties",
                 {
+                    ios: {
+                        deploymentTarget: "15.1",
+                        useFrameworks: "static"
+                    },
                     android: {
                         compileSdkVersion: 35,
                         targetSdkVersion: 35,

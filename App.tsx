@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StatusBar, View, Text, ActivityIndicator, AppState } from 'react-native';
+import { StatusBar, View, Text, ActivityIndicator, AppState, Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -56,6 +56,44 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
     }>({ visible: false, callerId: '', isVideo: false });
 
     const { colors, isDark } = useTheme();
+
+    // Handle Deep Link from main app (zyeachat://chat?partnerId=...)
+    useEffect(() => {
+        const handleDeepLink = (event: { url: string }) => {
+            const url = event.url;
+            if (!url || !navigationRef.isReady()) return;
+
+            console.log('🔗 Deep link received:', url);
+
+            // Parse zyeachat://chat?partnerId=xxx&userName=xxx&avatar=xxx
+            if (url.includes('zyeachat://chat')) {
+                const params = new URLSearchParams(url.split('?')[1]);
+                const partnerId = params.get('partnerId');
+                const userName = params.get('userName');
+                const avatar = params.get('avatar');
+
+                if (partnerId) {
+                    navigationRef.navigate('ChatDetail', {
+                        partnerId,
+                        userName: userName ? decodeURIComponent(userName) : 'Người dùng',
+                        avatar: avatar ? decodeURIComponent(avatar) : undefined,
+                    });
+                }
+            }
+        };
+
+        // Handle deep link when app is already open
+        const subscription = Linking.addEventListener('url', handleDeepLink);
+
+        // Handle deep link when app is opened from cold start
+        Linking.getInitialURL().then(url => {
+            if (url) {
+                setTimeout(() => handleDeepLink({ url }), 1000);
+            }
+        });
+
+        return () => subscription.remove();
+    }, [navigationRef]);
 
     // Setup Notifications
     useEffect(() => {
