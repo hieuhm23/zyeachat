@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StatusBar, View, Text, ActivityIndicator, AppState, Linking, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
@@ -87,6 +87,7 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
     const [unreadChatCount, setUnreadChatCount] = useState(0);
     const [authChecked, setAuthChecked] = useState(false);
     const [incomingCall, setIncomingCall] = useState<any>(null);
+    const initialUrlProcessed = useRef(false);
 
     const { colors, isDark } = useTheme();
 
@@ -141,11 +142,14 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
         const subscription = Linking.addEventListener('url', handleDeepLink);
 
         // Handle deep link when app is opened from cold start
-        Linking.getInitialURL().then(url => {
-            if (url) {
-                handleDeepLink({ url });
-            }
-        });
+        if (!initialUrlProcessed.current) {
+            Linking.getInitialURL().then(url => {
+                if (url) {
+                    handleDeepLink({ url });
+                }
+            });
+            initialUrlProcessed.current = true;
+        }
 
         return () => subscription.remove();
     }, [navigationRef, user]);
