@@ -17,6 +17,7 @@ import { Ionicons, MaterialIcons, Feather, MaterialCommunityIcons } from '@expo/
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import * as Updates from 'expo-updates';
+import Constants from 'expo-constants';
 import { RootStackParamList } from '../navigation/types';
 import { useTheme } from '../context/ThemeContext';
 import { getCurrentUser } from '../utils/api';
@@ -229,7 +230,7 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                     </View>
 
                     <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-                        FPTChat v1.0.20 © 2026 FPT Corporation.
+                        Zyea Chat v{Constants.expoConfig?.version || '1.0.0'} © 2026 Zyea Software.
                     </Text>
                 </ScrollView>
             </SafeAreaView>
