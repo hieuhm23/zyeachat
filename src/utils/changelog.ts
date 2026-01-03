@@ -10,6 +10,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: "1.0.1",
+        date: "03/01/2026",
+        title: "CẬP NHẬT GIAO DIỆN",
+        changes: [
+            "🌙 Sửa lỗi Dark Mode cho header",
+            "✨ Cập nhật branding Zyea Chat",
+            "🔧 OTA Updates hoạt động ổn định",
+        ]
+    },
+    {
         version: "1.0.0",
         date: "03/01/2026",
         title: "RA MẮT ZYEA CHAT",

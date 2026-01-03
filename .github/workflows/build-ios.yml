@@ -41,8 +41,11 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: � Prebuild iOS
+      - name: 🔨 Prebuild iOS with OTA Updates
         run: npx expo prebuild --platform ios --clean
+        env:
+          EAS_NO_VCS: 1
+          EXPO_UPDATES_CHANNEL: production
 
       - name: �📦 Install CocoaPods
         run: |
