@@ -597,7 +597,7 @@ export default function ChatListScreen() {
             />
 
             <LinearGradient
-                colors={['#ffebd9', '#e0f8ff']}
+                colors={colors.headerGradient}
                 start={{ x: 0, y: 0.5 }}
                 end={{ x: 1, y: 0.5 }}
                 style={styles.headerGradient}
@@ -614,7 +614,7 @@ export default function ChatListScreen() {
                                 source={{ uri: getAvatarUri(currentUser?.avatar, currentUser?.name || 'User') }}
                                 style={{ width: 38, height: 38, borderRadius: 19 }}
                             />
-                            <View style={[styles.onlineDot, { right: 0, bottom: 0, borderColor: '#ffebd9' }]} />
+                            <View style={[styles.onlineDot, { right: 0, bottom: 0, borderColor: isDark ? colors.card : '#ffebd9' }]} />
                         </View>
                         <Text style={[styles.headerTitle, { color: colors.text }]}>Chats</Text>
                     </TouchableOpacity>

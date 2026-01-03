@@ -85,7 +85,7 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
 
             {/* Header Gradient Background */}
             <LinearGradient
-                colors={['#ffebd9', '#e0f8ff']} // Light pastel gradient like header
+                colors={colors.headerGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.headerBackground}
@@ -95,11 +95,11 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                 {/* Header Bar */}
                 <View style={styles.headerBar}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                        <Ionicons name="chevron-back" size={28} color="#000" />
+                        <Ionicons name="chevron-back" size={28} color={colors.text} />
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.scanButton}>
-                        <Ionicons name="scan-outline" size={24} color="#000" />
+                        <Ionicons name="scan-outline" size={24} color={colors.text} />
                     </TouchableOpacity>
                 </View>
 
@@ -122,26 +122,26 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                                 <Ionicons name="camera" size={12} color="#fff" />
                             </TouchableOpacity>
                         </View>
-                        <Text style={[styles.userName, { color: '#000' }]}>{user?.name || 'Người dùng'}</Text>
-                        <Text style={[styles.department, { color: '#6B7280' }]}>{user?.department || 'FRT - FLC - HN'}</Text>
+                        <Text style={[styles.userName, { color: colors.text }]}>{user?.name || 'Người dùng'}</Text>
+                        <Text style={[styles.department, { color: colors.textSecondary }]}>{user?.department || 'FRT - FLC - HN'}</Text>
                     </View>
 
                     {/* Menu Group 1 */}
                     <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff' }]}>
                         {renderMenuItem(
-                            <Ionicons name="person-circle" size={20} color="#000" />,
+                            <Ionicons name="person-circle" size={20} color={colors.text} />,
                             "Hồ sơ thông tin",
                             undefined,
                             () => navigation.navigate('EditProfile')
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
-                            <Ionicons name="happy-outline" size={20} color="#000" />,
+                            <Ionicons name="happy-outline" size={20} color={colors.text} />,
                             "Dòng trạng thái"
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
-                            <Ionicons name="ellipse" size={20} color="#000" />,
+                            <Ionicons name="ellipse" size={20} color={colors.text} />,
                             "Trạng thái hoạt động",
                             undefined,
                             undefined,
@@ -156,12 +156,12 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                     {/* Menu Group 2 */}
                     <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff', marginTop: 12 }]}>
                         {renderMenuItem(
-                            <Ionicons name="folder-outline" size={20} color="#000" />,
+                            <Ionicons name="folder-outline" size={20} color={colors.text} />,
                             "Thư mục tin nhắn"
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
-                            <Ionicons name="bookmark" size={20} color="#000" />,
+                            <Ionicons name="bookmark" size={20} color={colors.text} />,
                             "Tin nhắn lưu"
                         )}
                     </View>
@@ -169,40 +169,40 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                     {/* Menu Group 3 */}
                     <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff', marginTop: 12 }]}>
                         {renderMenuItem(
-                            <MaterialIcons name="devices" size={20} color="#000" />,
+                            <MaterialIcons name="devices" size={20} color={colors.text} />,
                             "Quản lý thiết bị"
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
-                            <Ionicons name="shield-checkmark" size={20} color="#000" />,
+                            <Ionicons name="shield-checkmark" size={20} color={colors.text} />,
                             "Bảo mật & An toàn",
                             undefined,
                             () => navigation.navigate('ChangePassword')
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
-                            <Ionicons name="pie-chart-outline" size={20} color="#000" />,
+                            <Ionicons name="pie-chart-outline" size={20} color={colors.text} />,
                             "Quản lý tài nguyên"
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
-                            <Ionicons name="notifications" size={20} color="#000" />,
+                            <Ionicons name="notifications" size={20} color={colors.text} />,
                             "Thông báo & âm thanh"
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
-                            <Ionicons name="color-palette-outline" size={20} color="#000" />,
+                            <Ionicons name="color-palette-outline" size={20} color={colors.text} />,
                             "Giao diện",
                             "Hệ thống"
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
-                            <MaterialCommunityIcons name="format-size" size={20} color="#000" />,
+                            <MaterialCommunityIcons name="format-size" size={20} color={colors.text} />,
                             "Kích thước chữ"
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
-                            <Ionicons name="globe-outline" size={20} color="#000" />,
+                            <Ionicons name="globe-outline" size={20} color={colors.text} />,
                             "Ngôn ngữ",
                             "Tiếng Việt"
                         )}
@@ -211,17 +211,17 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                     {/* Menu Group 4 */}
                     <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff', marginTop: 12 }]}>
                         {renderMenuItem(
-                            <Ionicons name="chatbox-ellipses-outline" size={20} color="#000" />,
+                            <Ionicons name="chatbox-ellipses-outline" size={20} color={colors.text} />,
                             "Góp ý"
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
-                            <Ionicons name="help-circle-outline" size={20} color="#000" />,
+                            <Ionicons name="help-circle-outline" size={20} color={colors.text} />,
                             "Hướng dẫn sử dụng"
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
-                            <Ionicons name="log-out-outline" size={20} color="#000" />,
+                            <Ionicons name="log-out-outline" size={20} color={colors.text} />,
                             "Đăng xuất",
                             undefined,
                             handleLogout

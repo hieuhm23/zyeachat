@@ -1,7 +1,7 @@
 module.exports = {
     expo: {
         name: "Zyea Chat",
-        slug: "vinalive-chat",
+        slug: "zyea-chat",
         scheme: "zyeachat",
         version: "1.0.0",
         orientation: "portrait",
