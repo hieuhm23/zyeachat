@@ -36,21 +36,26 @@ export default function UpdateModal({ visible, onUpdate, onClose, isDownloading 
         }
     }, [visible]);
 
+
     const loadChangelog = async () => {
         setLoading(true);
         try {
-            // Fetch from backend API to get the NEW version's changelog
+            // Try to fetch from backend API for chat app changelog
             // This ensures we show the CORRECT version content during OTA update
-            const response = await fetch(`${API_URL}/api/changelog/latest`);
+            const response = await fetch(`${API_URL}/api/changelog/chat/latest`);
             if (response.ok) {
                 const data = await response.json();
                 setChangelog(data);
             } else {
-                setChangelog(null);
+                // Fallback to local changelog if API endpoint not available
+                const { getLatestChangelog } = require('../utils/changelog');
+                setChangelog(getLatestChangelog());
             }
         } catch (error) {
-            console.log('Failed to fetch changelog:', error);
-            setChangelog(null);
+            console.log('Failed to fetch changelog, using local:', error);
+            // Fallback to local changelog
+            const { getLatestChangelog } = require('../utils/changelog');
+            setChangelog(getLatestChangelog());
         }
         setLoading(false);
     };

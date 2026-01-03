@@ -26,6 +26,10 @@ import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
 
 // Components
 import IncomingCallModal from './src/components/IncomingCallModal';
+import UpdateModal from './src/components/UpdateModal';
+
+// Hooks
+import { useAppUpdates } from './src/hooks/useAppUpdates';
 
 // Configure Notifications
 Notifications.setNotificationHandler({
@@ -90,6 +94,7 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
     const initialUrlProcessed = useRef(false);
 
     const { colors, isDark } = useTheme();
+    const { isUpdateAvailable, isDownloading, downloadAndApply, dismissUpdate } = useAppUpdates();
 
     // Handle Deep Link from main app (zyeachat://chat?token=xxx&partnerId=xxx)
     useEffect(() => {
@@ -387,6 +392,14 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
                     }
                     setIncomingCall(null);
                 }}
+            />
+
+            {/* OTA Update Modal */}
+            <UpdateModal
+                visible={isUpdateAvailable}
+                isDownloading={isDownloading}
+                onUpdate={downloadAndApply}
+                onClose={dismissUpdate}
             />
         </>
     );
