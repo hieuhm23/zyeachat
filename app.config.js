@@ -103,7 +103,10 @@ module.exports = {
             enabled: true,
             checkAutomatically: "ON_LOAD",
             fallbackToCacheTimeout: 30000,
-            url: "https://u.expo.dev/a1fbc6ea-528e-41ad-9502-98ca3d8ad1e7"
+            url: "https://u.expo.dev/a1fbc6ea-528e-41ad-9502-98ca3d8ad1e7",
+            requestHeaders: {
+                "expo-channel-name": "production"
+            }
         },
         runtimeVersion: {
             policy: "appVersion"
