@@ -124,7 +124,7 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                             </TouchableOpacity>
                         </View>
                         <Text style={[styles.userName, { color: colors.text }]}>{user?.name || 'Người dùng'}</Text>
-                        <Text style={[styles.department, { color: colors.textSecondary }]}>{user?.department || 'FRT - FLC - HN'}</Text>
+                        <Text style={[styles.department, { color: colors.textSecondary }]}>{user?.email || user?.phone || ''}</Text>
                     </View>
 
                     {/* Menu Group 1 */}
