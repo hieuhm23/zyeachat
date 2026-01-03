@@ -90,6 +90,12 @@ module.exports = {
                 {
                     locationWhenInUsePermission: "Cho phép $(PRODUCT_NAME) truy cập vị trí để chia sẻ trong chat."
                 }
+            ],
+            [
+                "expo-updates",
+                {
+                    username: "hieukka"
+                }
             ]
         ],
         // OTA updates enabled - auto update without reinstalling IPA

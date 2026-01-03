@@ -45,7 +45,9 @@ jobs:
         run: npx expo prebuild --platform ios --clean
         env:
           EAS_NO_VCS: 1
-          EXPO_UPDATES_CHANNEL: production
+          EAS_PROJECT_ID: a1fbc6ea-528e-41ad-9502-98ca3d8ad1e7
+          EAS_UPDATE_URL: https://u.expo.dev/a1fbc6ea-528e-41ad-9502-98ca3d8ad1e7
+          EXPO_UPDATES_NATIVE_CHANNEL: production
 
       - name: �📦 Install CocoaPods
         run: |

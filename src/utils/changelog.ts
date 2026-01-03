@@ -10,6 +10,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: "1.0.2",
+        date: "04/01/2026",
+        title: "TEST OTA UPDATE",
+        changes: [
+            "🚀 Test OTA Updates hoạt động",
+            "📱 Cập nhật qua mạng thành công!",
+        ]
+    },
+    {
         version: "1.0.1",
         date: "03/01/2026",
         title: "CẬP NHẬT GIAO DIỆN",

@@ -40,6 +40,13 @@ export function useAppUpdates(): UseAppUpdatesReturn {
             console.log('[Updates] Checking for updates...');
             const update = await Updates.checkForUpdateAsync();
 
+            // DEBUG: Show alert with result
+            const { Alert } = require('react-native');
+            Alert.alert(
+                'OTA Debug',
+                `isAvailable: ${update.isAvailable}\nmanifest: ${update.manifest ? 'có' : 'không'}`
+            );
+
             if (update.isAvailable) {
                 console.log('[Updates] New update available!');
                 setIsUpdateAvailable(true);
@@ -47,8 +54,11 @@ export function useAppUpdates(): UseAppUpdatesReturn {
                 console.log('[Updates] App is up to date');
                 setIsUpdateAvailable(false);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.log('[Updates] Error checking for updates:', error);
+            // DEBUG: Show error alert
+            const { Alert } = require('react-native');
+            Alert.alert('OTA Error', error?.message || String(error));
             setIsUpdateAvailable(false);
         } finally {
             isCheckingRef.current = false;
