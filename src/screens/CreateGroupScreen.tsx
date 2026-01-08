@@ -12,14 +12,14 @@ import {
     Platform,
     KeyboardAvoidingView
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { getConversations, apiRequest, getImageUrl } from '../utils/api';
+import { LinearGradient } from 'expo-linear-gradient';
+import { getConversations, apiRequest } from '../utils/api';
 import { getAvatarUri } from '../utils/media';
-
-const BLUE = '#0068FF';
+import { useTheme } from '../context/ThemeContext';
 
 interface User {
     id: string;
@@ -29,6 +29,8 @@ interface User {
 
 export default function CreateGroupScreen() {
     const navigation = useNavigation<any>();
+    const { colors, isDark } = useTheme();
+    const insets = useSafeAreaInsets();
     const [groupName, setGroupName] = useState('');
     const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
     const [contacts, setContacts] = useState<User[]>([]);
@@ -43,15 +45,12 @@ export default function CreateGroupScreen() {
     const loadContacts = async () => {
         try {
             setLoading(true);
-            // Get conversations to extract contacts
             const conversations = await getConversations();
-            console.log('CreateGroup - Conversations:', JSON.stringify(conversations?.slice(0, 2)));
 
             const uniqueUsers: User[] = [];
             const seenIds = new Set<string>();
 
             conversations.forEach((conv: any) => {
-                // Try multiple field name patterns
                 const partnerId = conv.partner_id || conv.partnerId;
                 const partnerName = conv.name || conv.partnerName || conv.partner_name || 'Người dùng';
                 const partnerAvatar = conv.avatar || conv.partnerAvatar || conv.partner_avatar;
@@ -66,7 +65,6 @@ export default function CreateGroupScreen() {
                 }
             });
 
-            console.log('CreateGroup - Unique users:', uniqueUsers.length);
             setContacts(uniqueUsers);
         } catch (error) {
             console.error('Load contacts error:', error);
@@ -96,8 +94,6 @@ export default function CreateGroupScreen() {
 
         try {
             setCreating(true);
-            console.log('Creating group:', groupName.trim(), 'Members:', selectedUsers.map(u => u.id));
-
             const response = await apiRequest('/api/groups', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -106,29 +102,22 @@ export default function CreateGroupScreen() {
                 })
             }) as { error?: string; id?: string; name?: string; avatar?: string; members?: any[] };
 
-            console.log('Create group response:', JSON.stringify(response));
-
             if (response.error) {
                 Alert.alert('Lỗi', response.error);
                 return;
             }
 
             if (!response.id) {
-                console.error('No group ID in response:', response);
                 Alert.alert('Lỗi', 'Không nhận được ID nhóm từ server');
                 return;
             }
 
-            // Generate default group avatar from members if not provided
-            const groupAvatar = response.avatar || null;
-
-            // Navigate to the new group chat
             navigation.replace('ChatDetail', {
                 conversationId: undefined,
                 partnerId: undefined,
                 groupId: response.id,
                 userName: response.name || groupName.trim(),
-                avatar: groupAvatar,
+                avatar: response.avatar || null,
                 isGroup: true,
                 members: response.members || selectedUsers
             });
@@ -151,7 +140,7 @@ export default function CreateGroupScreen() {
 
         return (
             <TouchableOpacity
-                style={styles.userItem}
+                style={[styles.userItem, { borderBottomColor: colors.border }]}
                 onPress={() => toggleUserSelection(item)}
                 activeOpacity={0.7}
             >
@@ -168,10 +157,10 @@ export default function CreateGroupScreen() {
                             </Text>
                         </View>
                     )}
-                    <Text style={styles.userName}>{item.name}</Text>
+                    <Text style={[styles.userName, { color: colors.text }]}>{item.name}</Text>
                 </View>
 
-                <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                <View style={[styles.checkbox, isSelected && { backgroundColor: colors.primary, borderColor: colors.primary }, !isSelected && { borderColor: colors.border }]}>
                     {isSelected && (
                         <Ionicons name="checkmark" size={16} color="#fff" />
                     )}
@@ -181,41 +170,52 @@ export default function CreateGroupScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
 
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#000" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Tạo nhóm mới</Text>
-                <TouchableOpacity
-                    style={[styles.createButton, (!groupName.trim() || selectedUsers.length < 1) && styles.createButtonDisabled]}
-                    onPress={handleCreateGroup}
-                    disabled={!groupName.trim() || selectedUsers.length < 1 || creating}
-                >
-                    {creating ? (
-                        <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                        <Text style={styles.createButtonText}>Tạo</Text>
-                    )}
-                </TouchableOpacity>
-            </View>
+            {/* Gradient Header */}
+            <LinearGradient
+                colors={colors.headerGradient}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={{ paddingTop: insets.top }}
+            >
+                <View style={[styles.header, { borderBottomColor: 'transparent' }]}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                    <Text style={[styles.headerTitle, { color: colors.text }]}>Tạo nhóm mới</Text>
+                    <TouchableOpacity
+                        style={[
+                            styles.createButton,
+                            { backgroundColor: colors.primary },
+                            (!groupName.trim() || selectedUsers.length < 1) && styles.createButtonDisabled
+                        ]}
+                        onPress={handleCreateGroup}
+                        disabled={!groupName.trim() || selectedUsers.length < 1 || creating}
+                    >
+                        {creating ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <Text style={styles.createButtonText}>Tạo</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            </LinearGradient>
 
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
                 {/* Group Name Input */}
-                <View style={styles.groupNameSection}>
-                    <View style={styles.groupIconContainer}>
-                        <Ionicons name="people" size={28} color={BLUE} />
+                <View style={[styles.groupNameSection, { borderBottomColor: colors.border }]}>
+                    <View style={[styles.groupIconContainer, { backgroundColor: isDark ? colors.card : '#E8F4FF' }]}>
+                        <Ionicons name="people" size={28} color={colors.primary} />
                     </View>
                     <TextInput
-                        style={styles.groupNameInput}
+                        style={[styles.groupNameInput, { color: colors.text }]}
                         placeholder="Tên nhóm"
-                        placeholderTextColor="#999"
+                        placeholderTextColor={colors.textSecondary}
                         value={groupName}
                         onChangeText={setGroupName}
                         maxLength={50}
@@ -224,8 +224,8 @@ export default function CreateGroupScreen() {
 
                 {/* Selected Users */}
                 {selectedUsers.length > 0 && (
-                    <View style={styles.selectedSection}>
-                        <Text style={styles.sectionLabel}>
+                    <View style={[styles.selectedSection, { borderBottomColor: colors.border }]}>
+                        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
                             Đã chọn ({selectedUsers.length})
                         </Text>
                         <FlatList
@@ -254,7 +254,7 @@ export default function CreateGroupScreen() {
                                     <View style={styles.removeButton}>
                                         <Ionicons name="close" size={12} color="#fff" />
                                     </View>
-                                    <Text style={styles.selectedName} numberOfLines={1}>
+                                    <Text style={[styles.selectedName, { color: colors.text }]} numberOfLines={1}>
                                         {item.name.split(' ').pop()}
                                     </Text>
                                 </TouchableOpacity>
@@ -265,18 +265,18 @@ export default function CreateGroupScreen() {
 
                 {/* Search */}
                 <View style={styles.searchSection}>
-                    <View style={styles.searchContainer}>
-                        <Ionicons name="search" size={20} color="#999" />
+                    <View style={[styles.searchContainer, { backgroundColor: colors.inputBackground }]}>
+                        <Ionicons name="search" size={20} color={colors.textSecondary} />
                         <TextInput
-                            style={styles.searchInput}
+                            style={[styles.searchInput, { color: colors.text }]}
                             placeholder="Tìm kiếm liên hệ..."
-                            placeholderTextColor="#999"
+                            placeholderTextColor={colors.textSecondary}
                             value={searchQuery}
                             onChangeText={setSearchQuery}
                         />
                         {searchQuery.length > 0 && (
                             <TouchableOpacity onPress={() => setSearchQuery('')}>
-                                <Ionicons name="close-circle" size={20} color="#999" />
+                                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
                             </TouchableOpacity>
                         )}
                     </View>
@@ -284,15 +284,15 @@ export default function CreateGroupScreen() {
 
                 {/* Contacts List */}
                 <View style={styles.contactsSection}>
-                    <Text style={styles.sectionLabel}>Liên hệ gần đây</Text>
+                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Liên hệ gần đây</Text>
                     {loading ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color={BLUE} />
+                            <ActivityIndicator size="large" color={colors.primary} />
                         </View>
                     ) : filteredContacts.length === 0 ? (
                         <View style={styles.emptyContainer}>
-                            <Ionicons name="people-outline" size={48} color="#ccc" />
-                            <Text style={styles.emptyText}>
+                            <Ionicons name="people-outline" size={48} color={colors.textSecondary} />
+                            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
                                 {searchQuery ? 'Không tìm thấy liên hệ' : 'Chưa có liên hệ nào'}
                             </Text>
                         </View>
@@ -307,14 +307,13 @@ export default function CreateGroupScreen() {
                     )}
                 </View>
             </KeyboardAvoidingView>
-        </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     header: {
         flexDirection: 'row',
@@ -323,7 +322,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
     },
     backButton: {
         padding: 4,
@@ -331,10 +329,8 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#000',
     },
     createButton: {
-        backgroundColor: BLUE,
         paddingHorizontal: 20,
         paddingVertical: 8,
         borderRadius: 20,
@@ -343,6 +339,7 @@ const styles = StyleSheet.create({
     },
     createButtonDisabled: {
         backgroundColor: '#ccc',
+        opacity: 0.5
     },
     createButtonText: {
         color: '#fff',
@@ -355,13 +352,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 16,
         borderBottomWidth: 8,
-        borderBottomColor: '#f5f5f5',
     },
     groupIconContainer: {
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#E8F4FF',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -369,18 +364,15 @@ const styles = StyleSheet.create({
     groupNameInput: {
         flex: 1,
         fontSize: 17,
-        color: '#000',
         paddingVertical: 8,
     },
     selectedSection: {
         paddingTop: 12,
         paddingBottom: 8,
         borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
     },
     sectionLabel: {
         fontSize: 13,
-        color: '#666',
         fontWeight: '500',
         paddingHorizontal: 16,
         marginBottom: 8,
@@ -408,10 +400,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#ff4444',
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 1,
     },
     selectedName: {
         fontSize: 12,
-        color: '#333',
         marginTop: 4,
         textAlign: 'center',
     },
@@ -422,7 +414,6 @@ const styles = StyleSheet.create({
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f5f5f5',
         borderRadius: 10,
         paddingHorizontal: 12,
         height: 40,
@@ -430,7 +421,6 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         fontSize: 15,
-        color: '#000',
         marginLeft: 8,
     },
     contactsSection: {
@@ -449,7 +439,6 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 15,
-        color: '#999',
         marginTop: 12,
     },
     contactsList: {
@@ -461,6 +450,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
+        borderBottomWidth: 1,
     },
     userInfo: {
         flexDirection: 'row',
@@ -490,7 +480,6 @@ const styles = StyleSheet.create({
     },
     userName: {
         fontSize: 16,
-        color: '#000',
         fontWeight: '500',
     },
     checkbox: {
@@ -498,12 +487,7 @@ const styles = StyleSheet.create({
         height: 24,
         borderRadius: 12,
         borderWidth: 2,
-        borderColor: '#ccc',
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    checkboxSelected: {
-        backgroundColor: BLUE,
-        borderColor: BLUE,
     },
 });

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Platform, StatusBar, Keyboard, Modal, Alert, ActivityIndicator, Dimensions, Animated, KeyboardAvoidingView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
@@ -23,6 +24,7 @@ import GroupAvatar from '../components/GroupAvatar';
 import * as Clipboard from 'expo-clipboard';
 import ForwardMessageModal from '../components/ForwardMessageModal';
 import ChatOptionsModal from '../components/ChatOptionsModal';
+import { useTheme } from '../context/ThemeContext';
 
 
 
@@ -30,7 +32,7 @@ import ChatOptionsModal from '../components/ChatOptionsModal';
 type ChatDetailRouteProp = RouteProp<RootStackParamList, 'ChatDetail'>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const ZALO_BLUE = '#0068FF';
+const ZALO_BLUE = '#F97316';
 const ZALO_BG = '#FFFFFF'; // White background as seen in image
 const MY_BUBBLE = '#5C3C5D'; // Dark Purple from image
 const OTHER_BUBBLE = '#F2F4F5'; // Very light gray for other
@@ -39,8 +41,16 @@ const CALL_MISSED_RED = '#E04B4B'; // Red for missed calls
 
 // ... update styles ...
 export default function ChatDetailScreen() {
-    const navigation = useNavigation<any>(); // Using any to avoid complex typing issues temporarily
+    const { colors, isDark } = useTheme();
+    const navigation = useNavigation<any>();
     const route = useRoute<ChatDetailRouteProp>();
+    const insets = useSafeAreaInsets();
+
+    // Update dynamic colors based on theme
+    const MESSAGE_TEXT_COLOR_ME = '#FFFFFF';
+    const MESSAGE_TEXT_COLOR_OTHER = colors.text;
+    const BUBBLE_COLOR_OTHER = isDark ? '#333333' : '#F2F4F5';
+
     const { conversationId, partnerId, userName, avatar, groupId, isGroup, members } = route.params;
 
     // Header Info State (Fallback if params missing)
@@ -1049,7 +1059,12 @@ export default function ChatDetailScreen() {
     const renderHeader = () => {
         if (isSearching) {
             return (
-                <View style={styles.header}>
+                <LinearGradient
+                    colors={colors.headerGradient}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}
+                    style={[styles.header, { backgroundColor: 'transparent', paddingTop: insets.top, borderBottomWidth: 0 }]}
+                >
                     <TouchableOpacity onPress={() => {
                         setIsSearching(false);
                         setSearchQuery('');
@@ -1075,12 +1090,17 @@ export default function ChatDetailScreen() {
                             </TouchableOpacity>
                         )}
                     </View>
-                </View>
+                </LinearGradient >
             );
         }
 
         return (
-            <View style={styles.header}>
+            <LinearGradient
+                colors={colors.headerGradient}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={[styles.header, { backgroundColor: 'transparent', paddingTop: insets.top, borderBottomWidth: 0 }]}
+            >
                 <View style={styles.headerLeft}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                         <Ionicons name="chevron-back" size={28} color="#000000" />
@@ -1189,7 +1209,7 @@ export default function ChatDetailScreen() {
                         </TouchableOpacity>
                     )}
                 </View>
-            </View >
+            </LinearGradient >
         );
     };
 
@@ -1436,16 +1456,20 @@ export default function ChatDetailScreen() {
         }
 
         return (
-            <Text style={[styles.messageText, { color: isMe ? '#FFFFFF' : '#000000' }]}>
+            <Text style={[styles.messageText, {
+                color: isMe ? MESSAGE_TEXT_COLOR_ME : MESSAGE_TEXT_COLOR_OTHER,
+                fontSize: 17, // iOS HIG Body size
+                lineHeight: 22
+            }]}>
                 {segments.map((seg, index) => {
                     if (seg.type === 'mention_all') {
-                        return <Text key={index} style={{ fontWeight: 'bold', color: isMe ? '#FFD700' : '#0068FF' }}>{seg.text}</Text>;
+                        return <Text key={index} style={{ fontWeight: 'bold', color: isMe ? '#FFD700' : colors.primary }}>{seg.text}</Text>;
                     }
                     if (seg.type === 'mention_user' && seg.data) {
                         return (
                             <Text
                                 key={index}
-                                style={{ fontWeight: 'bold', color: isMe ? '#FFD700' : '#0068FF' }}
+                                style={{ fontWeight: 'bold', color: isMe ? '#FFD700' : colors.primary }}
                                 onPress={() => handleViewProfile(seg.data.id || seg.data.user_id)}
                                 suppressHighlighting={true}
                             >
@@ -1570,7 +1594,7 @@ export default function ChatDetailScreen() {
                                     <TouchableOpacity
                                         style={[
                                             styles.messageBubble,
-                                            isMe ? styles.bubbleMe : styles.bubbleOther,
+                                            isMe ? styles.bubbleMe : { backgroundColor: BUBBLE_COLOR_OTHER },
                                             { flexDirection: 'row', alignItems: 'center', width: 250 }
                                         ]}
                                         onPress={() => Linking.openURL(fileData.url)}
@@ -1581,8 +1605,8 @@ export default function ChatDetailScreen() {
                                             <Ionicons name="document-text" size={24} color={isMe ? '#FFF' : '#555'} />
                                         </View>
                                         <View style={{ flex: 1, justifyContent: 'center' }}>
-                                            <Text style={[styles.messageText, { color: isMe ? '#FFF' : '#333', fontWeight: 'bold' }]} numberOfLines={1}>{fileData.name}</Text>
-                                            <Text style={{ color: isMe ? 'rgba(255,255,255,0.8)' : '#666', fontSize: 11 }}>{Math.round(fileData.size / 1024)} KB • {item.time}</Text>
+                                            <Text style={[styles.messageText, { color: isMe ? '#FFF' : colors.text, fontWeight: 'bold' }]} numberOfLines={1}>{fileData.name}</Text>
+                                            <Text style={{ color: isMe ? 'rgba(255,255,255,0.8)' : colors.text, fontSize: 11 }}>{Math.round(fileData.size / 1024)} KB • {item.time}</Text>
                                         </View>
                                     </TouchableOpacity>
                                 );
@@ -1594,7 +1618,7 @@ export default function ChatDetailScreen() {
                                 const mapUrl = Platform.OS === 'ios' ? `http://maps.apple.com/?ll=${lat},${long}` : `geo:${lat},${long}?q=${lat},${long}`;
                                 return (
                                     <TouchableOpacity
-                                        style={[styles.messageBubble, isMe ? styles.bubbleMe : styles.bubbleOther, { width: 250, padding: 0, overflow: 'hidden' }]}
+                                        style={[styles.messageBubble, isMe ? styles.bubbleMe : { backgroundColor: BUBBLE_COLOR_OTHER }, { width: 250, padding: 0, overflow: 'hidden' }]}
                                         onPress={() => Linking.openURL(mapUrl)}
                                         onLongPress={() => handleCheckSelectMessage(item)}
                                         delayLongPress={500}
@@ -1606,7 +1630,7 @@ export default function ChatDetailScreen() {
                                         <View style={{ padding: 10 }}>
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                                 <Ionicons name="location" size={20} color={isMe ? '#FFF' : '#FF3B30'} />
-                                                <Text style={[styles.messageText, { color: isMe ? '#FFF' : '#333', fontWeight: 'bold', marginLeft: 5 }]}>Vị trí đã chia sẻ</Text>
+                                                <Text style={[styles.messageText, { color: isMe ? '#FFF' : colors.text, fontWeight: 'bold', marginLeft: 5 }]}>Vị trí đã chia sẻ</Text>
                                             </View>
                                             <Text style={{ color: isMe ? 'rgba(255,255,255,0.8)' : '#0084FF', fontSize: 12, marginTop: 4 }}>Bấm để mở bản đồ</Text>
                                         </View>
@@ -1640,7 +1664,7 @@ export default function ChatDetailScreen() {
                                 </TouchableOpacity>
                             ) : item.type === 'audio' ? (
                                 <TouchableOpacity
-                                    style={[styles.messageBubble, isMe ? styles.bubbleMe : styles.bubbleOther, { width: 220, padding: 12 }]}
+                                    style={[styles.messageBubble, isMe ? styles.bubbleMe : { backgroundColor: BUBBLE_COLOR_OTHER }, { width: 220, padding: 12 }]}
                                     onLongPress={() => handleCheckSelectMessage(item)}
                                     delayLongPress={500}
                                     activeOpacity={0.9}
@@ -1658,13 +1682,13 @@ export default function ChatDetailScreen() {
                                             <Ionicons
                                                 name={playingMessageId === item.id ? "pause" : "play"}
                                                 size={20}
-                                                color={isMe ? '#FFFFFF' : '#333333'}
+                                                color={isMe ? '#FFFFFF' : colors.text}
                                                 style={{ marginLeft: playingMessageId === item.id ? 0 : 2 }}
                                             />
                                         </TouchableOpacity>
                                         <View style={{ flex: 1, justifyContent: 'center' }}>
                                             <View style={{ height: 3, backgroundColor: isMe ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)', borderRadius: 2, width: '100%', marginBottom: 4 }} />
-                                            <Text style={{ color: isMe ? 'rgba(255,255,255,0.9)' : '#555555', fontSize: 11 }}>
+                                            <Text style={{ color: isMe ? 'rgba(255,255,255,0.9)' : colors.text, fontSize: 11 }}>
                                                 {item.audioDuration ? `${item.audioDuration}s` : 'Voice Message'}
                                             </Text>
                                         </View>
@@ -1736,7 +1760,7 @@ export default function ChatDetailScreen() {
                                 </View>
                             ) : (
                                 <TouchableOpacity
-                                    style={[styles.messageBubble, isMe ? styles.bubbleMe : styles.bubbleOther]}
+                                    style={[styles.messageBubble, isMe ? styles.bubbleMe : { backgroundColor: BUBBLE_COLOR_OTHER }]}
                                     onLongPress={() => handleCheckSelectMessage(item)}
                                     delayLongPress={500}
                                     activeOpacity={0.8}
@@ -1836,7 +1860,7 @@ export default function ChatDetailScreen() {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
             {renderHeader()}
 
             {/* Header Options Menu (3-dots) */}
@@ -2006,13 +2030,15 @@ export default function ChatDetailScreen() {
                 {/* Input Container */}
                 <View style={[
                     styles.footer,
+                    { backgroundColor: isDark ? colors.card : '#fff' }, // Dynamic Footer BG
                     Platform.OS === 'ios'
                         ? { marginBottom: showEmojiPicker ? 0 : (keyboardHeight > 0 ? keyboardHeight : 20) }
                         : {}
                 ]}>
+
                     {/* Mention Popup List (Moved inside footer to float above input) */}
                     {showMention && (
-                        <View style={styles.mentionPopup}>
+                        <View style={[styles.mentionPopup, { backgroundColor: isDark ? colors.card : '#FFFFFF', borderColor: isDark ? colors.border : '#E5E7EB' }]}>
                             <FlatList
                                 data={[
                                     { id: 'all', name: 'All', avatar: null, isAll: true },
@@ -2020,22 +2046,22 @@ export default function ChatDetailScreen() {
                                 ]}
                                 keyExtractor={(item, index) => item.id || String(index)}
                                 renderItem={({ item }) => (
-                                    <TouchableOpacity style={styles.mentionItem} onPress={() => handleMentionSelect(item)}>
+                                    <TouchableOpacity style={[styles.mentionItem, { borderBottomColor: isDark ? colors.border : '#F3F4F6' }]} onPress={() => handleMentionSelect(item)}>
                                         <View style={styles.mentionAvatarContainer}>
                                             {item.isAll ? (
-                                                <View style={[styles.mentionAvatar, { backgroundColor: '#F3F4F6' }]}>
-                                                    <Ionicons name="people" size={20} color="#333" />
+                                                <View style={[styles.mentionAvatar, { backgroundColor: isDark ? '#4B5563' : '#F3F4F6' }]}>
+                                                    <Ionicons name="people" size={20} color={isDark ? '#FFF' : "#333"} />
                                                 </View>
                                             ) : (
                                                 <Image source={{ uri: getAvatarUri(item.avatar, item.name) }} style={styles.mentionAvatar} />
                                             )}
                                         </View>
                                         <View>
-                                            <Text style={styles.mentionName}>{item.name}</Text>
+                                            <Text style={[styles.mentionName, { color: colors.text }]}>{item.name}</Text>
                                             {item.isAll ? (
-                                                <Text style={styles.mentionSubtitle}>Nhắc tất cả mọi người</Text>
+                                                <Text style={[styles.mentionSubtitle, { color: colors.textSecondary }]}>Nhắc tất cả mọi người</Text>
                                             ) : (
-                                                <Text style={styles.mentionSubtitle}>{item.role === 'admin' ? 'Quản trị viên' : (item.role === 'moderator' ? 'Phó nhóm' : 'Thành viên')}</Text>
+                                                <Text style={[styles.mentionSubtitle, { color: colors.textSecondary }]}>{item.role === 'admin' ? 'Quản trị viên' : (item.role === 'moderator' ? 'Phó nhóm' : 'Thành viên')}</Text>
                                             )}
                                         </View>
                                     </TouchableOpacity>
@@ -2056,27 +2082,27 @@ export default function ChatDetailScreen() {
                     )}
 
                     {replyingTo && (
-                        <View style={styles.replyBarContainer}>
+                        <View style={[styles.replyBarContainer, { backgroundColor: isDark ? colors.background : '#F0F2F5' }]}>
                             <View style={styles.replyBarAccent} />
                             <View style={styles.replyBarContent}>
-                                <Text style={styles.replyBarTitle}>Đang trả lời</Text>
-                                <Text style={styles.replyBarMessage} numberOfLines={1}>{replyingTo.text || '[Phương tiện]'}</Text>
+                                <Text style={[styles.replyBarTitle, { color: colors.textSecondary }]}>Đang trả lời</Text>
+                                <Text style={[styles.replyBarMessage, { color: colors.text }]} numberOfLines={1}>{replyingTo.text || '[Phương tiện]'}</Text>
                             </View>
                             <TouchableOpacity onPress={() => setReplyingTo(null)} style={styles.replyBarClose}>
-                                <Ionicons name="close" size={20} color="#666" />
+                                <Ionicons name="close" size={20} color={colors.text} />
                             </TouchableOpacity>
                         </View>
                     )}
 
                     {editingMessage && (
-                        <View style={styles.editBarContainer}>
+                        <View style={[styles.editBarContainer, { backgroundColor: isDark ? colors.background : '#FFF' }]}>
                             <View style={[styles.replyBarAccent, { backgroundColor: '#F59E0B' }]} />
                             <View style={styles.replyBarContent}>
                                 <Text style={[styles.replyBarTitle, { color: '#F59E0B' }]}>Chỉnh sửa tin nhắn</Text>
-                                <Text style={styles.replyBarMessage} numberOfLines={1}>{editingMessage.text || ''}</Text>
+                                <Text style={[styles.replyBarMessage, { color: colors.text }]} numberOfLines={1}>{editingMessage.text || ''}</Text>
                             </View>
                             <TouchableOpacity onPress={handleCancelEdit} style={styles.replyBarClose}>
-                                <Ionicons name="close" size={20} color="#666" />
+                                <Ionicons name="close" size={20} color={colors.text} />
                             </TouchableOpacity>
                         </View>
                     )}
@@ -2085,12 +2111,13 @@ export default function ChatDetailScreen() {
                         {/* Attachment Button (Left) */}
                         {!isRecording && (
                             <TouchableOpacity style={styles.leftButton} onPress={() => setShowMediaPicker(true)}>
-                                <Ionicons name="add" size={22} color="#FFFFFF" />
+                                <Ionicons name="add" size={22} color={isDark ? '#FFF' : "#666"} />
                             </TouchableOpacity>
                         )}
+                        {/* Note: Original code had #FFFFFF which is weird if background is white. Changed to #666 or check original style */}
 
                         {/* Text Input Wrapper (Center) */}
-                        <View style={styles.inputWrapper}>
+                        <View style={[styles.inputWrapper, { backgroundColor: isDark ? '#333' : '#f0f0f0' }]}>
                             {isRecording ? (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingLeft: 10 }}>
                                     <Ionicons name="mic" size={20} color="#EF4444" />
@@ -2101,7 +2128,8 @@ export default function ChatDetailScreen() {
                                 <>
                                     <TextInput
                                         ref={inputRef}
-                                        style={styles.input}
+                                        style={[styles.input, { color: colors.text }]} // Dynamic Text Color
+
                                         value={inputText}
                                         onChangeText={handleTextChange}
                                         placeholder="Tin nhắn"
@@ -2145,7 +2173,7 @@ export default function ChatDetailScreen() {
 
                 {/* Emoji/Sticker Picker */}
                 {showEmojiPicker && (
-                    <View style={styles.pickerContainer}>
+                    <View style={[styles.pickerContainer, { backgroundColor: isDark ? colors.background : '#fff', borderTopColor: isDark ? colors.border : '#E5E7EB' }]}>
                         <View style={{ flex: 1 }}>
                             {pickerTab === 'emoji' ? (
                                 <EmojiPicker onSelectEmoji={handleEmojiSelect} />
@@ -2158,19 +2186,19 @@ export default function ChatDetailScreen() {
                         </View>
 
                         {/* Bottom Tab Bar */}
-                        <View style={styles.bottomTabBar}>
+                        <View style={[styles.bottomTabBar, { borderTopColor: isDark ? colors.border : '#F3F4F6' }]}>
                             <View style={styles.bottomTabsContainer}>
                                 <TouchableOpacity
                                     style={pickerTab === 'sticker' ? styles.bottomTabActive : styles.bottomTab}
                                     onPress={() => setPickerTab('sticker')}
                                 >
-                                    <Text style={pickerTab === 'sticker' ? styles.bottomTabActiveText : styles.bottomTabText}>Sticker</Text>
+                                    <Text style={pickerTab === 'sticker' ? styles.bottomTabActiveText : [styles.bottomTabText, { color: colors.textSecondary }]}>Sticker</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={pickerTab === 'emoji' ? styles.bottomTabActive : styles.bottomTab}
                                     onPress={() => setPickerTab('emoji')}
                                 >
-                                    <Text style={pickerTab === 'emoji' ? styles.bottomTabActiveText : styles.bottomTabText}>Emoji</Text>
+                                    <Text style={pickerTab === 'emoji' ? styles.bottomTabActiveText : [styles.bottomTabText, { color: colors.textSecondary }]}>Emoji</Text>
                                 </TouchableOpacity>
                             </View>
 
@@ -2181,7 +2209,7 @@ export default function ChatDetailScreen() {
                                     setInputText(prev => prev.slice(0, -1));
                                 }}
                             >
-                                <Ionicons name="backspace-outline" size={24} color="#333" />
+                                <Ionicons name="backspace-outline" size={24} color={isDark ? '#FFF' : "#333"} />
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -2259,7 +2287,7 @@ export default function ChatDetailScreen() {
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     keyboardVerticalOffset={0}
                 >
-                    <SafeAreaView style={styles.imagePreviewModalContainer}>
+                    <SafeAreaView style={styles.imagePreviewModalContainer} edges={['left', 'right', 'bottom']}>
                         {/* Header */}
                         <View style={styles.imagePreviewModalHeader}>
                             <TouchableOpacity
@@ -2456,7 +2484,7 @@ export default function ChatDetailScreen() {
                 <ChatOptionsModal
                     visible={showHeaderOptions}
                     onClose={() => setShowHeaderOptions(false)}
-                    partnerId={partnerId}
+                    partnerId={partnerId || ''}
                     partnerName={headerName}
                     onSearch={() => setIsSearching(true)}
                     onViewProfile={() => (navigation as any).navigate('Profile', { userId: partnerId })}
@@ -3335,7 +3363,7 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: '#0068FF',
+        backgroundColor: '#F97316',
         justifyContent: 'center',
         alignItems: 'center',
         marginLeft: 10,
@@ -3352,7 +3380,7 @@ const styles = StyleSheet.create({
         height: 16,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#0068FF',
+        borderColor: '#F97316',
         backgroundColor: '#e1e1e1',
     },
     readReceiptMore: {
@@ -3362,7 +3390,7 @@ const styles = StyleSheet.create({
     },
     readReceiptMoreText: {
         fontSize: 8,
-        color: '#0068FF',
+        color: '#F97316',
         fontWeight: 'bold',
     },
     // MENTION STYLES

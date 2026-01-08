@@ -10,12 +10,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: "1.0.4",
+        date: "04/01/2026",
+        title: "TỐI ƯU GIAO DIỆN",
+        changes: [
+            "🅰️ Điều chỉnh cỡ chữ chuẩn iOS HIG",
+            "✨ Cải thiện trải nghiệm đọc",
+        ]
+    },
+    {
         version: "1.0.3",
         date: "04/01/2026",
         title: "CẬP NHẬT THÔNG TIN",
         changes: [
             "👤 Hiển thị email thay cho thông tin mặc định",
-            "🛠 Cải thiện giao diện Settings",
+            "🛠 C cải thiện giao diện Settings",
         ]
     },
     {

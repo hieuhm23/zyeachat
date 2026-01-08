@@ -10,7 +10,10 @@ import {
     Platform,
     Switch,
     Image,
-    SafeAreaView
+    SafeAreaView,
+    NativeSyntheticEvent,
+    NativeScrollEvent,
+    Linking
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -32,6 +35,13 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
     const { colors, isDark } = useTheme();
     const [user, setUser] = useState<any>(null);
     const [isActiveStatus, setIsActiveStatus] = useState(true);
+    const [showHeaderInfo, setShowHeaderInfo] = useState(false);
+
+    const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const scrollY = event.nativeEvent.contentOffset.y;
+        // Show header info when scrolled past 100px (profile section)
+        setShowHeaderInfo(scrollY > 100);
+    };
 
     useFocusEffect(
         React.useCallback(() => {
@@ -87,8 +97,8 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
             {/* Header Gradient Background */}
             <LinearGradient
                 colors={colors.headerGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
                 style={styles.headerBackground}
             />
 
@@ -99,6 +109,18 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                         <Ionicons name="chevron-back" size={28} color={colors.text} />
                     </TouchableOpacity>
 
+                    {/* Collapsed Header Info - shows when scrolled */}
+                    {showHeaderInfo && (
+                        <View style={styles.collapsedHeaderInfo}>
+                            <Text style={[styles.collapsedName, { color: colors.text }]} numberOfLines={1}>
+                                {user?.name || ''}
+                            </Text>
+                            <Text style={[styles.collapsedEmail, { color: colors.textSecondary }]} numberOfLines={1}>
+                                {user?.email || user?.phone || ''}
+                            </Text>
+                        </View>
+                    )}
+
                     <TouchableOpacity style={styles.scanButton}>
                         <Ionicons name="scan-outline" size={24} color={colors.text} />
                     </TouchableOpacity>
@@ -108,6 +130,8 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                     style={styles.scrollView}
                     contentContainerStyle={{ paddingBottom: 40 }}
                     showsVerticalScrollIndicator={false}
+                    onScroll={handleScroll}
+                    scrollEventThrottle={16}
                 >
                     {/* User Profile Section */}
                     <View style={styles.profileSection}>
@@ -118,22 +142,22 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                             />
                             <TouchableOpacity
                                 style={styles.editAvatarBtn}
-                                onPress={() => navigation.navigate('EditProfile')}
+                                onPress={() => Linking.openURL('zyea://profile')}
                             >
                                 <Ionicons name="camera" size={12} color="#fff" />
                             </TouchableOpacity>
                         </View>
-                        <Text style={[styles.userName, { color: colors.text }]}>{user?.name || 'Người dùng'}</Text>
+                        <Text style={[styles.userName, { color: colors.text }]}>{user?.name || ''}</Text>
                         <Text style={[styles.department, { color: colors.textSecondary }]}>{user?.email || user?.phone || ''}</Text>
                     </View>
 
                     {/* Menu Group 1 */}
-                    <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff' }]}>
+                    <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff', borderColor: isDark ? '#374151' : '#E5E7EB' }]}>
                         {renderMenuItem(
                             <Ionicons name="person-circle" size={20} color={colors.text} />,
                             "Hồ sơ thông tin",
                             undefined,
-                            () => navigation.navigate('EditProfile')
+                            () => Linking.openURL('zyea://profile')
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
@@ -155,7 +179,7 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                     </View>
 
                     {/* Menu Group 2 */}
-                    <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff', marginTop: 12 }]}>
+                    <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff', borderColor: isDark ? '#374151' : '#E5E7EB', marginTop: 12 }]}>
                         {renderMenuItem(
                             <Ionicons name="folder-outline" size={20} color={colors.text} />,
                             "Thư mục tin nhắn"
@@ -168,7 +192,7 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                     </View>
 
                     {/* Menu Group 3 */}
-                    <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff', marginTop: 12 }]}>
+                    <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff', borderColor: isDark ? '#374151' : '#E5E7EB', marginTop: 12 }]}>
                         {renderMenuItem(
                             <MaterialIcons name="devices" size={20} color={colors.text} />,
                             "Quản lý thiết bị"
@@ -178,7 +202,7 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                             <Ionicons name="shield-checkmark" size={20} color={colors.text} />,
                             "Bảo mật & An toàn",
                             undefined,
-                            () => navigation.navigate('ChangePassword')
+                            () => Linking.openURL('zyea://settings/security')
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
@@ -210,7 +234,7 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                     </View>
 
                     {/* Menu Group 4 */}
-                    <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff', marginTop: 12 }]}>
+                    <View style={[styles.menuGroup, { backgroundColor: isDark ? colors.card : '#fff', borderColor: isDark ? '#374151' : '#E5E7EB', marginTop: 12 }]}>
                         {renderMenuItem(
                             <Ionicons name="chatbox-ellipses-outline" size={20} color={colors.text} />,
                             "Góp ý"
@@ -263,6 +287,21 @@ const styles = StyleSheet.create({
     scanButton: {
         padding: 8,
     },
+    collapsedHeaderInfo: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 10,
+    },
+    collapsedName: {
+        fontSize: 16,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    collapsedEmail: {
+        fontSize: 12,
+        textAlign: 'center',
+    },
     scrollView: {
         flex: 1,
     },
@@ -296,7 +335,7 @@ const styles = StyleSheet.create({
         borderColor: '#fff',
     },
     userName: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
         marginBottom: 4,
     },
@@ -308,6 +347,15 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         overflow: 'hidden',
         paddingVertical: 4,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        // Shadow for iOS
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        // Shadow for Android
+        elevation: 1,
     },
     menuItem: {
         flexDirection: 'row',
@@ -322,16 +370,14 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     iconContainer: {
-        width: 0, // Hidden or minimal as per design (design shows direct icons)
-        height: 0,
-        // The design shows icons directly without container background, 
-        // effectively 0 width if we want to mimic strictly or remove it.
-        // Actually the design shows simple black icons.
-        // Let's hide the container logic from previous implementation
-        display: 'none',
+        width: 28,
+        height: 28,
+        borderRadius: 6,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     menuTitle: {
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: '400',
     },
     menuRight: {
@@ -361,7 +407,7 @@ const styles = StyleSheet.create({
     },
     footerText: {
         textAlign: 'center',
-        fontSize: 11,
+        fontSize: 12,
         marginTop: 24,
         marginBottom: 10,
         opacity: 0.6,

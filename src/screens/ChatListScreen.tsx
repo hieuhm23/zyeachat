@@ -2,9 +2,9 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import {
     View, Text, FlatList, TouchableOpacity, StyleSheet,
     TextInput, StatusBar, Platform, ActivityIndicator,
-    RefreshControl, Alert, Image, Animated
+    RefreshControl, Alert, Image, Animated, Linking
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -24,10 +24,11 @@ const DARK_TEXT = '#E5E7EB';
 const DARK_TEXT_SECONDARY = '#9CA3AF';
 const ONLINE_GREEN = '#22C55E';
 
-type TabType = 'all' | 'unread' | 'muted';
+type TabType = 'all' | 'private' | 'groups';
 
 export default function ChatListScreen() {
     const { colors, isDark } = useTheme();
+    const insets = useSafeAreaInsets();
     const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
     const [conversations, setConversations] = useState<any[]>([]);
     const [searchText, setSearchText] = useState('');
@@ -245,10 +246,10 @@ export default function ChatListScreen() {
         let result = conversations;
 
         // Filter by tab
-        if (activeTab === 'unread') {
-            result = result.filter(conv => conv.unread > 0);
-        } else if (activeTab === 'muted') {
-            result = result.filter(conv => conv.isMuted);
+        if (activeTab === 'private') {
+            result = result.filter(conv => !conv.isGroup);
+        } else if (activeTab === 'groups') {
+            result = result.filter(conv => conv.isGroup);
         }
 
         // Filter by search
@@ -531,7 +532,7 @@ export default function ChatListScreen() {
                     <View style={styles.contentContainer}>
                         <View style={styles.headerRow}>
                             {item.isPinned && (
-                                <Ionicons name="pin" size={14} color={ZALO_BLUE} style={{ marginRight: 4 }} />
+                                <Ionicons name="pin" size={14} color={colors.primary} style={{ marginRight: 4 }} />
                             )}
                             {item.isGroup && (
                                 <Ionicons name="people" size={14} color={colors.textSecondary} style={{ marginRight: 4 }} />
@@ -568,22 +569,22 @@ export default function ChatListScreen() {
     const renderTabs = () => (
         <View style={styles.tabContainer}>
             <TouchableOpacity
-                style={[styles.tab, { backgroundColor: activeTab === 'all' ? (isDark ? colors.card : '#1F2937') : (isDark ? '#2D2D2D' : '#E5E7EB') }]}
+                style={[styles.tab, { backgroundColor: activeTab === 'all' ? (isDark ? colors.card : '#1F2937') : (isDark ? '#2D2D2D' : 'rgba(229, 231, 235, 0.5)') }]}
                 onPress={() => setActiveTab('all')}
             >
                 <Text style={[styles.tabText, { color: activeTab === 'all' ? '#FFFFFF' : colors.textSecondary }]}>Tất cả</Text>
             </TouchableOpacity>
             <TouchableOpacity
-                style={[styles.tab, { backgroundColor: activeTab === 'unread' ? (isDark ? colors.card : '#1F2937') : (isDark ? '#2D2D2D' : '#E5E7EB') }]}
-                onPress={() => setActiveTab('unread')}
+                style={[styles.tab, { backgroundColor: activeTab === 'private' ? (isDark ? colors.card : '#1F2937') : (isDark ? '#2D2D2D' : 'rgba(229, 231, 235, 0.5)') }]}
+                onPress={() => setActiveTab('private')}
             >
-                <Text style={[styles.tabText, { color: activeTab === 'unread' ? '#FFFFFF' : colors.textSecondary }]}>Chưa đọc</Text>
+                <Text style={[styles.tabText, { color: activeTab === 'private' ? '#FFFFFF' : colors.textSecondary }]}>Tin Nhắn</Text>
             </TouchableOpacity>
             <TouchableOpacity
-                style={[styles.tab, { backgroundColor: activeTab === 'muted' ? (isDark ? colors.card : '#1F2937') : (isDark ? '#2D2D2D' : '#E5E7EB') }]}
-                onPress={() => setActiveTab('muted')}
+                style={[styles.tab, { backgroundColor: activeTab === 'groups' ? (isDark ? colors.card : '#1F2937') : (isDark ? '#2D2D2D' : 'rgba(229, 231, 235, 0.5)') }]}
+                onPress={() => setActiveTab('groups')}
             >
-                <Text style={[styles.tabText, { color: activeTab === 'muted' ? '#FFFFFF' : colors.textSecondary }]}>Tắt thông báo</Text>
+                <Text style={[styles.tabText, { color: activeTab === 'groups' ? '#FFFFFF' : colors.textSecondary }]}>Nhóm</Text>
             </TouchableOpacity>
         </View>
     );
@@ -596,14 +597,10 @@ export default function ChatListScreen() {
                 translucent={true}
             />
 
-            <LinearGradient
-                colors={colors.headerGradient}
-                start={{ x: 0, y: 0.5 }}
-                end={{ x: 1, y: 0.5 }}
-                style={styles.headerGradient}
-            >
+            <View style={{ backgroundColor: 'transparent' }}> {/* Removed LinearGradient for cleaner look if desired, or keep it. User asked for transparent BG feel. */}
                 {/* Header */}
-                <View style={styles.header}>
+
+                <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
                     <TouchableOpacity
                         style={styles.headerLeft}
                         onPress={() => navigation.navigate('Settings' as any)}
@@ -631,6 +628,15 @@ export default function ChatListScreen() {
                         >
                             <Ionicons name="add-circle-outline" size={26} color={colors.text} />
                         </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.headerIcon}
+                            onPress={() => Linking.openURL('zyea://')}
+                        >
+                            <Image
+                                source={require('../../assets/zyea-icon.png')}
+                                style={{ width: 26, height: 26, borderRadius: 6 }}
+                            />
+                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -650,7 +656,7 @@ export default function ChatListScreen() {
 
                 {/* Tabs */}
                 {renderTabs()}
-            </LinearGradient>
+            </View>
 
             {/* Content */}
             {loading ? (
@@ -662,8 +668,8 @@ export default function ChatListScreen() {
                 <View style={styles.emptyContainer}>
                     <MaterialIcons name="chat-bubble-outline" size={80} color={colors.textSecondary} />
                     <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
-                        {activeTab === 'unread' ? 'Không có tin nhắn chưa đọc' :
-                            activeTab === 'muted' ? 'Không có cuộc trò chuyện nào bị tắt thông báo' :
+                        {activeTab === 'groups' ? 'Chưa có nhóm nào' :
+                            activeTab === 'private' ? 'Chưa có tin nhắn riêng nào' :
                                 searchText ? 'Không tìm thấy kết quả' : 'Chưa có cuộc trò chuyện nào'}
                     </Text>
                 </View>
@@ -723,7 +729,7 @@ const styles = StyleSheet.create({
         marginRight: 8
     },
     headerTitle: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
         color: '#000000',
     },
@@ -746,15 +752,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#F3F4F6', // Light gray standard
-        borderRadius: 10,
+        borderRadius: 20,
         paddingHorizontal: 12,
-        height: 36,
+        height: 40,
     },
     searchInput: {
         flex: 1,
         marginLeft: 8,
         color: '#000000',
-        fontSize: 15,
+        fontSize: 17,
     },
 
     // Tabs
@@ -833,7 +839,7 @@ const styles = StyleSheet.create({
         marginBottom: 4
     },
     name: {
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: '500',
         color: DARK_TEXT,
         flex: 1,
@@ -851,7 +857,7 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     lastMessage: {
-        fontSize: 14,
+        fontSize: 15,
         color: DARK_TEXT_SECONDARY,
         flex: 1
     },

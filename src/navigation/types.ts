@@ -2,7 +2,9 @@ import { LiveMode, Topic, TargetAudience, User, ExamResult } from '../types';
 
 export type RootStackParamList = {
     Auth: undefined;
-    Main: undefined; // Màn hình chính (chứa Bottom Tabs hoặc Home)
+    Main: undefined; // Màn hình chính (chứa Bottom Tabs như Telegram)
+    Contacts: undefined; // Danh bạ
+    Calls: undefined; // Cuộc gọi
     Session: {
         mode: LiveMode;
         topic: Topic;

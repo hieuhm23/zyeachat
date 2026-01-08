@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     View, Text, StyleSheet, TouchableOpacity, FlatList,
     StatusBar, Platform, Alert, TextInput, SafeAreaView, Modal, ActivityIndicator
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { getAvatarUri } from '../utils/media';
 import { apiRequest, getCurrentUser, uploadImage, getImageUrl } from '../utils/api';
+import { useTheme } from '../context/ThemeContext';
 import GroupAvatar from '../components/GroupAvatar';
 import { launchImageLibrary } from '../utils/imagePicker';
 
@@ -19,6 +22,8 @@ interface Member {
 }
 
 export default function GroupInfoScreen({ navigation, route }: any) {
+    const { colors } = useTheme();
+    const insets = useSafeAreaInsets();
     const { groupId, groupName: initialGroupName, groupAvatar: initialGroupAvatar, members: initialMembers, creatorId: paramCreatorId } = route.params;
 
     const [members, setMembers] = useState<Member[]>(initialMembers || []);
@@ -353,10 +358,15 @@ export default function GroupInfoScreen({ navigation, route }: any) {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <View style={styles.container}>
+            <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
-            <View style={styles.headerSection}>
+            <LinearGradient
+                colors={colors.headerGradient}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={[styles.headerSection, { backgroundColor: 'transparent', borderBottomWidth: 0, paddingTop: insets.top }]}
+            >
                 <View style={styles.navBar}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                         <Ionicons name="arrow-back" size={24} color="#333" />
@@ -414,7 +424,7 @@ export default function GroupInfoScreen({ navigation, route }: any) {
                         </TouchableOpacity>
                     ))}
                 </View>
-            </View>
+            </LinearGradient>
 
             <View style={styles.body}>
                 {activeTab === 'members' ? (
@@ -600,7 +610,7 @@ export default function GroupInfoScreen({ navigation, route }: any) {
                     </View>
                 </View>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 }
 

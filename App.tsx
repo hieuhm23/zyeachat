@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 // Screens - Chat and Call
+import MainTabScreen from './src/screens/MainTabScreen';
 import ChatListScreen from './src/screens/ChatListScreen';
 import ChatDetailScreen from './src/screens/ChatDetailScreen';
 import NewChatScreen from './src/screens/NewChatScreen';
@@ -352,6 +353,7 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
             />
 
             <Stack.Navigator screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="Main" component={MainTabScreen} />
                 <Stack.Screen name="ChatList" component={ChatListScreen} />
                 <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
                 <Stack.Screen name="NewChat" component={NewChatScreen} />

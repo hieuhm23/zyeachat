@@ -24,16 +24,16 @@ import { COLORS, NEUTRAL, BACKGROUND, TEXT, BORDER, BRAND } from '../theme/color
 
 // Bảng màu Sáng (Based on Design System)
 export const lightColors: ColorPalette = {
-    background: BACKGROUND.primary,
+    background: '#FFFFFF', // Pure White for seamless blending
     card: '#FFFFFF',
     text: TEXT.primary,
     textSecondary: TEXT.secondary,
     border: BORDER.default,
     primary: BRAND.orange, // Brand Core
-    headerGradient: ['#FFF0E6', '#F0F9FF'], // Pastel Peach -> Light Blue (Aligned with Chats Screen)
+    headerGradient: ['#FFF3E0', '#FFFFFF'], // Soft Orange -> White (Seamless fade)
     statusBar: 'dark-content',
     icon: NEUTRAL.gray600,
-    inputBackground: NEUTRAL.gray100,
+    inputBackground: '#F3F4F6', // Light Gray for search bar contrast
     placeholder: NEUTRAL.gray400,
 };
 
