@@ -9,7 +9,7 @@ import { RootStackParamList } from './src/navigation/types';
 import { User } from './src/types';
 import { getCurrentUser, logout as apiLogout, getConversations, setToken, getToken } from './src/utils/api';
 import { initSocket, disconnectSocket, getSocket } from './src/utils/socket';
-import { registerForPushNotificationsAsync, schedulePushNotification } from './src/utils/notifications';
+import { registerForPushNotificationsAsync, schedulePushNotification, incrementBadge, clearBadge, setBadgeCount } from './src/utils/notifications';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -231,6 +231,8 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
                                 avatar: message.user.avatar
                             }
                         );
+                        // Tăng badge count trên icon app
+                        await incrementBadge();
                         setUnreadChatCount(prev => prev + 1);
                     }
                 };
@@ -264,8 +266,11 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
 
     // Handle App State
     useEffect(() => {
-        const handleAppStateChange = (nextAppState: string) => {
+        const handleAppStateChange = async (nextAppState: string) => {
             if (nextAppState === 'active' && user?.id) {
+                // Xóa badge khi người dùng mở app
+                await clearBadge();
+
                 const socket = getSocket();
                 if (socket) {
                     if (!socket.connected) socket.connect();
@@ -308,6 +313,8 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
                 const conversations = await getConversations();
                 const total = conversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
                 setUnreadChatCount(total);
+                // Sync badge với unread count từ server
+                await setBadgeCount(total);
             } catch (error) {
                 console.log('Error fetching unread:', error);
             }

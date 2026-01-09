@@ -59,3 +59,54 @@ export async function schedulePushNotification(title: string, body: string, data
         trigger: null, // show immediately
     });
 }
+
+// ==================== BADGE MANAGEMENT ====================
+
+/**
+ * Lấy số badge hiện tại trên icon app
+ * @returns Số badge hiện tại
+ */
+export async function getBadgeCount(): Promise<number> {
+    return await Notifications.getBadgeCountAsync();
+}
+
+/**
+ * Set số badge trên icon app
+ * @param count - Số badge muốn hiển thị (0 để xóa badge)
+ */
+export async function setBadgeCount(count: number): Promise<boolean> {
+    return await Notifications.setBadgeCountAsync(count);
+}
+
+/**
+ * Tăng số badge lên 1 (khi có tin nhắn mới)
+ */
+export async function incrementBadge(): Promise<boolean> {
+    const currentBadge = await getBadgeCount();
+    return await setBadgeCount(currentBadge + 1);
+}
+
+/**
+ * Tăng số badge theo số lượng cụ thể
+ * @param amount - Số lượng muốn tăng thêm
+ */
+export async function incrementBadgeBy(amount: number): Promise<boolean> {
+    const currentBadge = await getBadgeCount();
+    return await setBadgeCount(currentBadge + amount);
+}
+
+/**
+ * Giảm số badge đi 1 (khi đọc 1 tin nhắn)
+ */
+export async function decrementBadge(): Promise<boolean> {
+    const currentBadge = await getBadgeCount();
+    const newCount = Math.max(0, currentBadge - 1);
+    return await setBadgeCount(newCount);
+}
+
+/**
+ * Xóa badge (khi user đọc hết tin nhắn hoặc mở app)
+ */
+export async function clearBadge(): Promise<boolean> {
+    return await setBadgeCount(0);
+}
