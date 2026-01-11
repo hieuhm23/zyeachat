@@ -12,6 +12,7 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { API_URL } from '../utils/api';
+import { useTheme } from '../context/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const STICKER_SIZE = (SCREEN_WIDTH - 24) / 5; // 5 columns
@@ -49,7 +50,38 @@ const getStickerUrl = (url: string): string => {
     return `${API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
+// Sub-component for individual sticker to handle loading state
+const StickerItem = ({ sticker, onSelect }: { sticker: Sticker, onSelect: () => void }) => {
+    const [isLoading, setIsLoading] = useState(true);
+    const { isDark } = useTheme();
+
+    return (
+        <TouchableOpacity style={styles.stickerItem} onPress={onSelect}>
+            <View style={{ flex: 1 }}>
+                {isLoading && (
+                    <View style={[StyleSheet.absoluteFill, {
+                        backgroundColor: isDark ? '#333' : '#E5E7EB',
+                        borderRadius: 8,
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                    }]}>
+                        <ActivityIndicator size="small" color="#999" />
+                    </View>
+                )}
+                <Image
+                    source={{ uri: getStickerUrl(sticker.image_url) }}
+                    style={styles.stickerImg}
+                    contentFit="contain"
+                    onLoadEnd={() => setIsLoading(false)}
+                    transition={200}
+                />
+            </View>
+        </TouchableOpacity>
+    );
+};
+
 export default function StickerPicker({ onSelectSticker, onTabChange }: StickerPickerProps) {
+    const { colors, isDark } = useTheme();
     const [stickerPacks, setStickerPacks] = useState<StickerPack[]>([]);
     const [selectedPackId, setSelectedPackId] = useState<string | null>(null); // null means 'recent'
     const [loading, setLoading] = useState(true);
@@ -97,9 +129,9 @@ export default function StickerPicker({ onSelectSticker, onTabChange }: StickerP
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             {/* 1. Top Pack Icons List */}
-            <View style={styles.topPackListContainer}>
+            <View style={[styles.topPackListContainer, { borderBottomColor: colors.border }]}>
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -131,19 +163,19 @@ export default function StickerPicker({ onSelectSticker, onTabChange }: StickerP
                 </ScrollView>
 
                 {/* Right Settings Icon */}
-                <TouchableOpacity style={styles.settingsButton}>
-                    <Ionicons name="settings-outline" size={20} color="#666" />
+                <TouchableOpacity style={[styles.settingsButton, { borderLeftColor: colors.border }]}>
+                    <Ionicons name="settings-outline" size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
             </View>
 
             {/* 2. Search & Quick Actions */}
             <View style={styles.searchRow}>
-                <View style={styles.searchBar}>
-                    <Ionicons name="search" size={18} color="#9CA3AF" />
+                <View style={[styles.searchBar, { backgroundColor: colors.inputBackground }]}>
+                    <Ionicons name="search" size={18} color={colors.textSecondary} />
                     <TextInput
-                        style={styles.searchInput}
+                        style={[styles.searchInput, { color: colors.text }]}
                         placeholder="Tìm kiếm"
-                        placeholderTextColor="#9CA3AF"
+                        placeholderTextColor={colors.placeholder}
                         value={searchText}
                         onChangeText={setSearchText}
                     />
@@ -151,7 +183,7 @@ export default function StickerPicker({ onSelectSticker, onTabChange }: StickerP
 
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickReactions}>
                     <TouchableOpacity style={styles.quickReactionItem}>
-                        <Ionicons name="heart-outline" size={20} color="#666" />
+                        <Ionicons name="heart-outline" size={20} color={colors.textSecondary} />
                     </TouchableOpacity>
                     {quickReactions.map((emoji, idx) => (
                         <TouchableOpacity key={idx} style={styles.quickReactionItem}>
@@ -162,29 +194,23 @@ export default function StickerPicker({ onSelectSticker, onTabChange }: StickerP
             </View>
 
             {/* 3. Main Content (Grid) */}
-            <View style={styles.gridContainer}>
+            <View style={[styles.gridContainer, { backgroundColor: colors.background }]}>
                 {selectedPackId === null ? (
-                    <View style={styles.centerContent}><Text style={styles.emptyText}>Chưa có sticker gần đây</Text></View>
+                    <View style={styles.centerContent}><Text style={[styles.emptyText, { color: colors.textSecondary }]}>Chưa có sticker gần đây</Text></View>
                 ) : (
                     <>
-                        <Text style={styles.sectionHeader}>{currentPack?.title || 'Stickers'}</Text>
+                        <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>{currentPack?.title || 'Stickers'}</Text>
                         <ScrollView
                             contentContainerStyle={styles.stickerGridContent}
                             showsVerticalScrollIndicator={false}
                         >
                             <View style={styles.stickerFlex}>
                                 {displayedStickers.map((sticker, index) => (
-                                    <TouchableOpacity
+                                    <StickerItem
                                         key={sticker.id || index}
-                                        style={styles.stickerItem}
-                                        onPress={() => handleStickerSelect(currentPack!.id, index, sticker)}
-                                    >
-                                        <Image
-                                            source={{ uri: getStickerUrl(sticker.image_url) }}
-                                            style={styles.stickerImg}
-                                            contentFit="contain"
-                                        />
-                                    </TouchableOpacity>
+                                        sticker={sticker}
+                                        onSelect={() => handleStickerSelect(currentPack!.id, index, sticker)}
+                                    />
                                 ))}
                             </View>
                         </ScrollView>

@@ -199,32 +199,41 @@ export default function CallsScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#FFFFFF' }]}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar
                 barStyle={isDark ? 'light-content' : 'dark-content'}
                 backgroundColor="transparent"
                 translucent
             />
 
-            {/* Header */}
-            <View style={[
-                styles.header,
-                {
-                    paddingTop: insets.top + 10,
-                    backgroundColor: isDark ? '#1C1C1E' : '#F8F8F8',
-                    borderBottomColor: isDark ? '#38383A' : '#C6C6C8',
-                }
-            ]}>
-                <TouchableOpacity onPress={() => setIsEditing(!isEditing)}>
-                    <Text style={[styles.editButton, { color: '#54A9EB' }]}>
-                        {isEditing ? 'Xong' : 'Sửa'}
-                    </Text>
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: colors.text }]}>Cuộc gọi</Text>
-                <TouchableOpacity>
-                    <Ionicons name="call" size={24} color="#54A9EB" />
-                </TouchableOpacity>
-            </View>
+            {/* Gradient Header */}
+            <LinearGradient
+                colors={colors.headerGradient}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={styles.headerGradient}
+            >
+                {/* Decorative Circles - Only show in dark mode */}
+                {isDark && (
+                    <>
+                        <View style={[styles.decorativeCircle, styles.circle1]} />
+                        <View style={[styles.decorativeCircle, styles.circle2]} />
+                    </>
+                )}
+
+                {/* Header */}
+                <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+                    <TouchableOpacity onPress={() => setIsEditing(!isEditing)}>
+                        <Text style={[styles.editButton, { color: colors.primary }]}>
+                            {isEditing ? 'Xong' : 'Sửa'}
+                        </Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.headerTitle, { color: colors.text }]}>Cuộc gọi</Text>
+                    <TouchableOpacity>
+                        <Ionicons name="call" size={24} color={colors.primary} />
+                    </TouchableOpacity>
+                </View>
+            </LinearGradient>
 
             {/* Call List */}
             <FlatList
@@ -236,7 +245,7 @@ export default function CallsScreen() {
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
-                        tintColor="#54A9EB"
+                        tintColor={colors.primary}
                     />
                 }
                 ListEmptyComponent={
@@ -256,13 +265,36 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    headerGradient: {
+        width: '100%',
+        paddingBottom: 8,
+        overflow: 'hidden',
+    },
+    decorativeCircle: {
+        position: 'absolute',
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: 'transparent',
+    },
+    circle1: {
+        width: 250,
+        height: 250,
+        top: -100,
+        right: -60,
+    },
+    circle2: {
+        width: 180,
+        height: 180,
+        top: -40,
+        left: -60,
+    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingBottom: 10,
-        borderBottomWidth: 0.5,
     },
     headerTitle: {
         fontSize: 17,

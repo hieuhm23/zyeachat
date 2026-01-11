@@ -22,6 +22,7 @@ export type RootStackParamList = {
     EditProfile: undefined;
     DeleteAccount: undefined;
     BlockedUsers: undefined;
+    MyQRCode: undefined;
 
     // Chat Screens
     ChatList: undefined;
@@ -43,6 +44,11 @@ export type RootStackParamList = {
         members?: any[];
         creatorId?: string;
     };
+    StoryViewer: {
+        storyId: string;
+        stories: any[];
+    };
+    CreateStory: undefined;
 
     // Call Screen
     Call: {

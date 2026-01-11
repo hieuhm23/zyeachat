@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Alert, Linking } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import TelegramBottomTabBar, { TelegramTabType } from '../components/TelegramBottomTabBar';
+import AppStoreBottomTabBar, { AppStoreTabType } from '../components/AppStoreBottomTabBar';
 import ContactsScreen from './ContactsScreen';
 import CallsScreen from './CallsScreen';
 import ChatListScreen from './ChatListScreen';
@@ -10,7 +10,7 @@ import { getConversations, apiRequest, logout as apiLogout } from '../utils/api'
 import { disconnectSocket } from '../utils/socket';
 
 export default function MainTabScreen() {
-    const [activeTab, setActiveTab] = useState<TelegramTabType>('CHATS');
+    const [activeTab, setActiveTab] = useState<AppStoreTabType>('CHATS');
     const [unreadChatCount, setUnreadChatCount] = useState(0);
 
     // Load unread count
@@ -81,7 +81,7 @@ export default function MainTabScreen() {
     return (
         <View style={styles.container}>
             {renderScreen()}
-            <TelegramBottomTabBar
+            <AppStoreBottomTabBar
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
                 unreadChatCount={unreadChatCount}

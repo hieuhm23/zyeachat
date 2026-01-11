@@ -135,41 +135,50 @@ export default function ContactsScreen() {
     );
 
     return (
-        <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#FFFFFF' }]}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar
                 barStyle={isDark ? 'light-content' : 'dark-content'}
                 backgroundColor="transparent"
                 translucent
             />
 
-            {/* Header */}
-            <View style={[
-                styles.header,
-                {
-                    paddingTop: insets.top + 10,
-                    backgroundColor: isDark ? '#1C1C1E' : '#F8F8F8',
-                    borderBottomColor: isDark ? '#38383A' : '#C6C6C8',
-                }
-            ]}>
-                <Text style={[styles.headerTitle, { color: colors.text }]}>Danh bạ</Text>
-                <TouchableOpacity style={styles.addButton}>
-                    <Ionicons name="add" size={28} color="#54A9EB" />
-                </TouchableOpacity>
-            </View>
+            {/* Gradient Header */}
+            <LinearGradient
+                colors={colors.headerGradient}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={styles.headerGradient}
+            >
+                {/* Decorative Circles - Only show in dark mode */}
+                {isDark && (
+                    <>
+                        <View style={[styles.decorativeCircle, styles.circle1]} />
+                        <View style={[styles.decorativeCircle, styles.circle2]} />
+                    </>
+                )}
 
-            {/* Search Bar */}
-            <View style={[styles.searchContainer, { backgroundColor: isDark ? '#1C1C1E' : '#F8F8F8' }]}>
-                <View style={[styles.searchBar, { backgroundColor: isDark ? '#38383A' : '#E5E5EA' }]}>
-                    <Ionicons name="search" size={18} color={isDark ? '#8E8E93' : '#8E8E93'} />
-                    <TextInput
-                        style={[styles.searchInput, { color: colors.text }]}
-                        placeholder="Tìm kiếm"
-                        placeholderTextColor="#8E8E93"
-                        value={searchText}
-                        onChangeText={setSearchText}
-                    />
+                {/* Header */}
+                <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+                    <Text style={[styles.headerTitle, { color: colors.text }]}>Danh bạ</Text>
+                    <TouchableOpacity style={styles.addButton}>
+                        <Ionicons name="add" size={28} color={colors.primary} />
+                    </TouchableOpacity>
                 </View>
-            </View>
+
+                {/* Search Bar */}
+                <View style={styles.searchContainer}>
+                    <View style={[styles.searchBar, { backgroundColor: colors.inputBackground }]}>
+                        <Ionicons name="search" size={18} color={colors.placeholder} />
+                        <TextInput
+                            style={[styles.searchInput, { color: colors.text }]}
+                            placeholder="Tìm kiếm"
+                            placeholderTextColor={colors.placeholder}
+                            value={searchText}
+                            onChangeText={setSearchText}
+                        />
+                    </View>
+                </View>
+            </LinearGradient>
 
             {/* Content */}
             {loading ? (
@@ -216,13 +225,36 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    headerGradient: {
+        width: '100%',
+        paddingBottom: 4,
+        overflow: 'hidden',
+    },
+    decorativeCircle: {
+        position: 'absolute',
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: 'transparent',
+    },
+    circle1: {
+        width: 250,
+        height: 250,
+        top: -100,
+        right: -60,
+    },
+    circle2: {
+        width: 180,
+        height: 180,
+        top: -40,
+        left: -60,
+    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingBottom: 10,
-        borderBottomWidth: 0.5,
     },
     headerTitle: {
         fontSize: 34,

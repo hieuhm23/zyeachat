@@ -23,7 +23,11 @@ import GroupInfoScreen from './src/screens/GroupInfoScreen';
 import CallScreen from './src/screens/CallScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
+import CreateStoryScreen from './src/screens/CreateStoryScreen';
+import MyQRCodeScreen from './src/screens/MyQRCodeScreen';
+import SecuritySettingsScreen from './src/screens/SecuritySettingsScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
+import StoryViewerScreen from './src/screens/StoryViewerScreen';
 
 // Components
 import IncomingCallModal from './src/components/IncomingCallModal';
@@ -112,8 +116,17 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
             const userName = params.get('userName');
             const avatar = params.get('avatar');
 
-            // If token is provided, save it and authenticate
+            // If token is provided, check if it's different from current token
             if (token) {
+                const currentToken = await getToken();
+
+                // If token is different, logout current user first
+                if (currentToken && currentToken !== token) {
+                    console.log('🔄 Token changed, switching account...');
+                    disconnectSocket();
+                    setUser(null);
+                }
+
                 console.log('🔐 Token received from main app, authenticating...');
                 await setToken(token);
 
@@ -133,6 +146,11 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
                             });
                         }, 500);
                     }
+                } else {
+                    // Token invalid, clear it
+                    console.log('❌ Token invalid, clearing...');
+                    await apiLogout();
+                    setUser(null);
                 }
             } else if (partnerId && navigationRef.isReady() && user) {
                 // No token but has partnerId - just navigate (already logged in)
@@ -264,24 +282,52 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
         };
     }, [user?.id]);
 
-    // Handle App State
+    // Handle App State - verify token when app becomes active
     useEffect(() => {
         const handleAppStateChange = async (nextAppState: string) => {
-            if (nextAppState === 'active' && user?.id) {
-                // Xóa badge khi người dùng mở app
-                await clearBadge();
-
-                const socket = getSocket();
-                if (socket) {
-                    if (!socket.connected) socket.connect();
-                    socket.emit('join', user.id);
+            if (nextAppState === 'active') {
+                // Verify token is still valid when app becomes active
+                const token = await getToken();
+                if (token) {
+                    try {
+                        const apiUser = await getCurrentUser();
+                        if (apiUser) {
+                            // Token valid, update user if needed
+                            if (!user || user.id !== apiUser.id) {
+                                setUser(apiUser);
+                            }
+                            // Clear badge and reconnect socket
+                            await clearBadge();
+                            const socket = getSocket();
+                            if (socket) {
+                                if (!socket.connected) socket.connect();
+                                socket.emit('join', apiUser.id);
+                            }
+                        } else {
+                            // Token invalid, logout
+                            console.log('⚠️ Token invalid on app active, logging out...');
+                            await apiLogout();
+                            disconnectSocket();
+                            setUser(null);
+                        }
+                    } catch (error) {
+                        console.log('⚠️ Token verification failed:', error);
+                        await apiLogout();
+                        disconnectSocket();
+                        setUser(null);
+                    }
+                } else if (user) {
+                    // No token but user exists - this shouldn't happen, logout
+                    console.log('⚠️ No token but user exists, logging out...');
+                    disconnectSocket();
+                    setUser(null);
                 }
             }
         };
 
         const subscription = AppState.addEventListener('change', handleAppStateChange);
         return () => subscription.remove();
-    }, [user?.id]);
+    }, [user]);
 
     // Check session - check if there's a saved token
     useEffect(() => {
@@ -371,7 +417,11 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
                 </Stack.Screen>
                 <Stack.Screen name="EditProfile" component={EditProfileScreen} />
                 <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+                <Stack.Screen name="SecuritySettings" component={SecuritySettingsScreen} />
+                <Stack.Screen name="MyQRCode" component={MyQRCodeScreen} options={{ headerShown: false, presentation: 'modal' }} />
+                <Stack.Screen name="CreateStory" component={CreateStoryScreen} options={{ headerShown: false, presentation: 'modal' }} />
                 <Stack.Screen name="Call" component={CallScreen} options={{ headerShown: false }} />
+                <Stack.Screen name="StoryViewer" component={StoryViewerScreen} options={{ headerShown: false, presentation: 'modal' }} />
             </Stack.Navigator>
 
             {/* Incoming Call Modal */}

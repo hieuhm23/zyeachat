@@ -16,6 +16,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { getAvatarUri } from '../utils/media';
 import GroupAvatar from '../components/GroupAvatar';
 import { useTheme } from '../context/ThemeContext';
+import { useToast } from '../components/Toast';
+import { ChatListSkeleton } from '../components/Skeleton';
+import StoryRail from '../components/StoryRail';
 
 // Light Theme Colors (Deprecated - keeping for legacy ref if needed, but unused)
 const ZALO_BLUE = '#0068FF';
@@ -39,6 +42,8 @@ export default function ChatListScreen() {
     const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
     const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
     const [activeTab, setActiveTab] = useState<TabType>('all');
+    const { Toast, success, error: showError, info } = useToast();
+    const swipeableRefs = useRef<Record<string, Swipeable | null>>({});
 
     // Format time like Zalo
     const formatMessageTime = useCallback((dateString: string | null | undefined): string => {
@@ -72,8 +77,11 @@ export default function ChatListScreen() {
 
     const loadConversations = async () => {
         try {
+            console.log('🔄 Loading conversations...');
             // Load individual conversations
             const data = await getConversations();
+            console.log('✅ Loaded individual conversations:', data?.length);
+
             const mappedConversations = data.map((c: Conversation) => ({
                 id: c.conversation_id,
                 partnerId: c.partner_id,
@@ -96,6 +104,8 @@ export default function ChatListScreen() {
             let mappedGroups: any[] = [];
             try {
                 const groups = await apiRequest<any[]>('/api/groups');
+                console.log('✅ Loaded groups raw data:', groups?.length, JSON.stringify(groups));
+
                 mappedGroups = (groups || []).map((g: any) => ({
                     id: g.id,
                     groupId: g.id,
@@ -128,6 +138,7 @@ export default function ChatListScreen() {
                 return timeB - timeA;
             });
 
+            console.log('✅ Total merged conversations:', allConversations.length);
             setConversations(allConversations);
         } catch (error) {
             console.log('Load conversations error:', error);
@@ -365,10 +376,15 @@ export default function ChatListScreen() {
 
         try {
             await muteConversation(conversationId, newMuteState);
+            // Close swipeable
+            swipeableRefs.current[conversationId]?.close();
+            // Show toast notification
+            success(newMuteState ? 'Đã tắt thông báo' : 'Đã bật thông báo');
         } catch (error) {
             setConversations(prev => prev.map(c =>
                 c.id === conversationId ? { ...c, isMuted: !newMuteState } : c
             ));
+            showError('Không thể thay đổi. Thử lại sau.');
         }
     };
 
@@ -378,6 +394,7 @@ export default function ChatListScreen() {
             {
                 text: 'Xóa', style: 'destructive',
                 onPress: async () => {
+                    swipeableRefs.current[conversationId]?.close();
                     setConversations(prev => prev.filter(conv => conv.id !== conversationId));
                     try {
                         await deleteConversation(conversationId);
@@ -458,8 +475,13 @@ export default function ChatListScreen() {
 
         try {
             await pinConversation(conversationId, newPinState);
+            // Show toast notification
+            success(newPinState ? 'Đã ghim cuộc trò chuyện' : 'Đã bỏ ghim');
+            // Close swipeable
+            swipeableRefs.current[conversationId]?.close();
         } catch (error) {
             loadConversations();
+            showError('Không thể thay đổi. Thử lại sau.');
         }
     };
 
@@ -471,11 +493,14 @@ export default function ChatListScreen() {
 
         return (
             <Swipeable
+                ref={(ref) => { swipeableRefs.current[item.id] = ref; }}
                 renderRightActions={() => renderRightActions(item)}
                 renderLeftActions={() => renderLeftActions(item)}
                 overshootRight={false}
                 overshootLeft={false}
-                friction={2}
+                friction={1.5}
+                rightThreshold={40}
+                leftThreshold={40}
             >
                 <TouchableOpacity
                     style={[styles.itemContainer, { backgroundColor: itemBg }]}
@@ -597,7 +622,21 @@ export default function ChatListScreen() {
                 translucent={true}
             />
 
-            <View style={{ backgroundColor: 'transparent' }}> {/* Removed LinearGradient for cleaner look if desired, or keep it. User asked for transparent BG feel. */}
+            <LinearGradient
+                colors={colors.headerGradient}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={styles.headerGradient}
+            >
+                {/* Decorative Circles - Only show in dark mode */}
+                {isDark && (
+                    <>
+                        <View style={[styles.decorativeCircle, styles.circle1]} />
+                        <View style={[styles.decorativeCircle, styles.circle2]} />
+                        <View style={[styles.decorativeCircle, styles.circle3]} />
+                    </>
+                )}
+
                 {/* Header */}
 
                 <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
@@ -626,7 +665,17 @@ export default function ChatListScreen() {
                             style={styles.headerIcon}
                             onPress={() => navigation.navigate('NewChat')}
                         >
-                            <Ionicons name="add-circle-outline" size={26} color={colors.text} />
+                            <View style={{
+                                width: 26,
+                                height: 26,
+                                borderRadius: 13,
+                                borderWidth: 2,
+                                borderColor: colors.text,
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                            }}>
+                                <Ionicons name="add" size={18} color={colors.text} />
+                            </View>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.headerIcon}
@@ -643,27 +692,30 @@ export default function ChatListScreen() {
                 {/* Search Bar */}
                 <View style={styles.searchContainer}>
                     <View style={[styles.searchBar, { backgroundColor: colors.inputBackground }]}>
-                        <Ionicons name="search" size={18} color={colors.placeholder || '#9CA3AF'} />
+                        <Ionicons name="search" size={18} color={colors.placeholder} />
                         <TextInput
                             style={[styles.searchInput, { color: colors.text }]}
                             placeholder="Tìm kiếm"
-                            placeholderTextColor={colors.placeholder || "#9CA3AF"}
+                            placeholderTextColor={colors.placeholder}
                             value={searchText}
                             onChangeText={setSearchText}
                         />
                     </View>
                 </View>
 
+                {/* Story Rail */}
+                <StoryRail
+                    currentUser={currentUser}
+                    onPressCreate={() => navigation.navigate('CreateStory')}
+                />
+
                 {/* Tabs */}
                 {renderTabs()}
-            </View>
+            </LinearGradient>
 
             {/* Content */}
             {loading ? (
-                <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                    <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Đang tải tin nhắn...</Text>
-                </View>
+                <ChatListSkeleton count={8} />
             ) : filteredConversations.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <MaterialIcons name="chat-bubble-outline" size={80} color={colors.textSecondary} />
@@ -672,6 +724,14 @@ export default function ChatListScreen() {
                             activeTab === 'private' ? 'Chưa có tin nhắn riêng nào' :
                                 searchText ? 'Không tìm thấy kết quả' : 'Chưa có cuộc trò chuyện nào'}
                     </Text>
+                    {!searchText && (
+                        <TouchableOpacity
+                            style={[styles.emptyButton, { backgroundColor: colors.primary }]}
+                            onPress={() => navigation.navigate('Contacts')}
+                        >
+                            <Text style={styles.emptyButtonText}>Bắt đầu trò chuyện</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             ) : (
                 <FlatList
@@ -689,6 +749,9 @@ export default function ChatListScreen() {
                     }
                 />
             )}
+
+            {/* Toast Notification Layer */}
+            <Toast />
         </View>
     );
 }
@@ -697,6 +760,17 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: DARK_BG
+    },
+    emptyButton: {
+        marginTop: 20,
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 24,
+    },
+    emptyButtonText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+        fontSize: 15,
     },
 
     // Header
@@ -709,6 +783,34 @@ const styles = StyleSheet.create({
         // I will keep radius but small or remove it? The image shows a flat list below.
         // Actually, if background is white/light, radius matters less. I'll keep it for style.
         paddingBottom: 4,
+        overflow: 'hidden',
+    },
+
+    // Decorative Circles for header
+    decorativeCircle: {
+        position: 'absolute',
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: 'transparent',
+    },
+    circle1: {
+        width: 300,
+        height: 300,
+        top: -120,
+        right: -80,
+    },
+    circle2: {
+        width: 200,
+        height: 200,
+        top: -60,
+        right: 50,
+    },
+    circle3: {
+        width: 150,
+        height: 150,
+        top: 20,
+        left: -50,
     },
 
     // Header
@@ -791,7 +893,7 @@ const styles = StyleSheet.create({
 
     // List
     listContent: {
-        paddingBottom: 20
+        paddingBottom: 100 // Extra padding to avoid floating bottom tab bar
     },
 
     // Conversation Item
@@ -866,7 +968,7 @@ const styles = StyleSheet.create({
         fontWeight: '500'
     },
     typingText: {
-        fontSize: 14,
+        fontSize: 15,
         color: ZALO_BLUE,
         fontStyle: 'italic',
         flex: 1
@@ -906,10 +1008,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     swipeAction: {
-        width: 75,
+        width: 80,
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
+        paddingHorizontal: 4,
     },
     muteAction: {
         backgroundColor: '#FF9500',

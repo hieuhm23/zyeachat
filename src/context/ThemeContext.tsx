@@ -45,7 +45,7 @@ export const darkColors: ColorPalette = {
     textSecondary: NEUTRAL.gray400,
     border: '#2D2D2D',
     primary: BRAND.orange,         // Keep brand identity
-    headerGradient: ['#2A1810', '#0F1A24'], // Dark version of the gradient
+    headerGradient: ['#1A3A35', '#121212'], // Teal/Green gradient -> Dark background
     statusBar: 'light-content',
     icon: NEUTRAL.gray400,
     inputBackground: '#2C2C2C',

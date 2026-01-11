@@ -748,3 +748,36 @@ export async function reportContent(
         body: JSON.stringify({ targetId, targetType, reason, details, messageId }),
     });
 }
+
+// ============ STORIES API ============
+
+export interface Story {
+    id: string;
+    userId: string;
+    userName: string;
+    userAvatar: string;
+    mediaUrl: string;
+    mediaType: 'image' | 'video';
+    caption?: string;
+    createdAt: string;
+    expiresAt: string;
+    viewed: boolean;
+    viewCount?: number;
+}
+
+export async function getStories(): Promise<Story[]> {
+    return apiRequest<Story[]>('/api/stories');
+}
+
+export async function createStory(mediaUrl: string, mediaType: 'image' | 'video', caption: string): Promise<Story> {
+    return apiRequest<Story>('/api/stories', {
+        method: 'POST',
+        body: JSON.stringify({ mediaUrl, mediaType, caption })
+    });
+}
+
+export async function markStoryAsViewed(storyId: string): Promise<void> {
+    return apiRequest<void>(`/api/stories/${storyId}/view`, {
+        method: 'POST'
+    });
+}

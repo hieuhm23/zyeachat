@@ -100,7 +100,16 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}
                 style={styles.headerBackground}
-            />
+            >
+                {/* Decorative Circles - Only show in dark mode */}
+                {isDark && (
+                    <>
+                        <View style={[styles.decorativeCircle, styles.circle1]} />
+                        <View style={[styles.decorativeCircle, styles.circle2]} />
+                        <View style={[styles.decorativeCircle, styles.circle3]} />
+                    </>
+                )}
+            </LinearGradient>
 
             <SafeAreaView style={{ flex: 1 }}>
                 {/* Header Bar */}
@@ -121,14 +130,14 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                         </View>
                     )}
 
-                    <TouchableOpacity style={styles.scanButton}>
-                        <Ionicons name="scan-outline" size={24} color={colors.text} />
+                    <TouchableOpacity style={styles.scanButton} onPress={() => navigation.navigate('MyQRCode')}>
+                        <Ionicons name="qr-code-outline" size={24} color={colors.text} />
                     </TouchableOpacity>
                 </View>
 
                 <ScrollView
                     style={styles.scrollView}
-                    contentContainerStyle={{ paddingBottom: 40 }}
+                    contentContainerStyle={{ paddingBottom: 100 }}
                     showsVerticalScrollIndicator={false}
                     onScroll={handleScroll}
                     scrollEventThrottle={16}
@@ -202,7 +211,7 @@ export default function SettingsScreen({ onLogout }: SettingsScreenProps) {
                             <Ionicons name="shield-checkmark" size={20} color={colors.text} />,
                             "Bảo mật & An toàn",
                             undefined,
-                            () => Linking.openURL('zyea://settings/security')
+                            () => navigation.navigate('SecuritySettings')
                         )}
                         <View style={[styles.divider, { backgroundColor: isDark ? '#374151' : '#E5E7EB' }]} />
                         {renderMenuItem(
@@ -272,6 +281,32 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: 200, // Background gradient height
+        overflow: 'hidden',
+    },
+    decorativeCircle: {
+        position: 'absolute',
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: 'transparent',
+    },
+    circle1: {
+        width: 300,
+        height: 300,
+        top: -120,
+        right: -80,
+    },
+    circle2: {
+        width: 200,
+        height: 200,
+        top: -60,
+        right: 50,
+    },
+    circle3: {
+        width: 150,
+        height: 150,
+        top: 20,
+        left: -50,
     },
     headerBar: {
         flexDirection: 'row',
