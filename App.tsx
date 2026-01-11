@@ -152,13 +152,29 @@ function AppContent({ navigationRef }: { navigationRef: any }) {
                     await apiLogout();
                     setUser(null);
                 }
-            } else if (partnerId && navigationRef.isReady() && user) {
-                // No token but has partnerId - just navigate (already logged in)
                 navigationRef.navigate('ChatDetail', {
                     partnerId,
                     userName: userName ? decodeURIComponent(userName) : 'Người dùng',
                     avatar: avatar ? decodeURIComponent(avatar) : undefined,
                 });
+            }
+
+            // Handle QR Code Deep Link (zyea://user/userId)
+            if (url.includes('/user/')) {
+                const parts = url.split('/user/');
+                const userId = parts[1]?.split('?')[0]; // Handle extra params if any
+
+                console.log('🔗 QR Code scanned for user:', userId);
+
+                if (userId && navigationRef.isReady()) {
+                    // Navigate to chat immediately if user exists
+                    setTimeout(() => {
+                        navigationRef.navigate('ChatDetail', {
+                            partnerId: userId,
+                            userName: 'Người dùng', // Will fetch info on screen load
+                        });
+                    }, 500);
+                }
             }
         };
 
